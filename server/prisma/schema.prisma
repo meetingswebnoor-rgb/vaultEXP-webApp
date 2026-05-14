@@ -1,0 +1,733 @@
+// =============================================================
+// VaultEXP — Prisma Schema (MySQL, Prisma 6)
+// Financial-grade, analytics-optimized, AI-ready
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum UserRole {
+  user
+  admin
+  superadmin
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum AuthProvider {
+  local
+  google
+}
+
+enum BusinessStatus {
+  active
+  inactive
+  archived
+}
+
+enum BusinessType {
+  sole_proprietor
+  partnership
+  llc
+  corporation
+  nonprofit
+  freelance
+  agency
+  other
+}
+
+enum PropertyType {
+  residential
+  commercial
+  industrial
+  land
+  mixed_use
+}
+
+enum PropertyStatus {
+  owned
+  rented_out
+  vacant
+  under_renovation
+  for_sale
+}
+
+enum TenantStatus {
+  active
+  inactive
+  vacated
+  evicted
+}
+
+enum RentStatus {
+  pending
+  paid
+  partial
+  overdue
+  waived
+}
+
+enum ExpenseCategory {
+  // Business
+  operations
+  marketing
+  payroll
+  utilities
+  rent_cost
+  equipment
+  software
+  travel
+  legal
+  tax
+  advertising
+  other_business
+  // Property
+  maintenance
+  repair
+  insurance
+  mortgage
+  management_fee
+  renovation
+  landscaping
+  other_property
+}
+
+enum InvoiceStatus {
+  draft
+  pending
+  paid
+  overdue
+  cancelled
+}
+
+enum InvestmentType {
+  stock
+  etf
+  crypto
+  mutual_fund
+  real_estate
+  bond
+  business
+  manual_asset
+}
+
+enum InvestmentStatus {
+  active
+  sold
+  partially_sold
+}
+
+enum WalletAccountType {
+  checking
+  savings
+  credit
+  investment
+  crypto
+  cash
+  other
+}
+
+enum TransactionType {
+  income
+  expense
+  transfer
+}
+
+enum TransactionStatus {
+  completed
+  pending
+  failed
+  reversed
+}
+
+enum DocumentType {
+  pdf
+  image
+  doc
+  spreadsheet
+  video
+  audio
+  other
+}
+
+enum DocumentContext {
+  business
+  property
+  investment
+  vault
+  personal
+  other
+}
+
+enum AlertType {
+  invoice_due
+  invoice_overdue
+  expense_budget
+  payment_reminder
+  rent_due
+  rent_overdue
+  lease_expiry
+  document_expiry
+  maintenance_due
+  mortgage_payment
+  insurance_renewal
+  tax_deadline
+  value_change
+  stop_loss
+  take_profit
+  security
+  account
+  custom
+}
+
+enum AlertPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum AlertStatus {
+  pending
+  seen
+  completed
+  dismissed
+  snoozed
+}
+
+enum VaultStatus {
+  active
+  archived
+  locked
+}
+
+enum VaultMemberRole {
+  owner
+  editor
+  viewer
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1. USER
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String       @id @default(cuid())
+  name         String       @db.VarChar(120)
+  email        String       @unique @db.VarChar(255)
+  passwordHash String?      @map("password_hash") @db.VarChar(255)
+  googleId     String?      @unique @map("google_id") @db.VarChar(128)
+  authProvider AuthProvider @default(local) @map("auth_provider")
+  avatar       String?      @db.VarChar(512)
+  role         UserRole     @default(user)
+  status       UserStatus   @default(active)
+  isVerified   Boolean      @default(false) @map("is_verified")
+
+  // User preferences
+  timezone String? @db.VarChar(50)
+  currency String  @default("USD") @db.VarChar(3)
+
+  // JSON blobs — structured when stable enough for own table
+  settings  Json? // UI prefs, dashboard layout, theme
+  aiProfile Json? @map("ai_profile") // goals, risk profile, business interests
+
+  // Auth tokens
+  emailVerifyToken   String?   @unique @map("email_verify_token") @db.VarChar(255)
+  emailVerifyExpires DateTime? @map("email_verify_expires")
+  resetToken         String?   @unique @map("reset_token") @db.VarChar(255)
+  resetTokenExpires  DateTime? @map("reset_token_expires")
+
+  // Security
+  loginAttempts Int       @default(0) @map("login_attempts")
+  lockedUntil   DateTime? @map("locked_until")
+  lastLoginAt   DateTime? @map("last_login_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  businesses   Business[]
+  properties   Property[]
+  investments  Investment[]
+  wallets      Wallet[]
+  documents    Document[]
+  alerts       Alert[]
+  vaults       Vault[]
+  vaultMembers VaultMember[]
+  expenses     Expense[]
+  invoices     Invoice[]
+  rents        RentRecord[]
+
+  @@index([status, deletedAt])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 2. BUSINESS
+// ─────────────────────────────────────────────────────────────
+
+model Business {
+  id            String         @id @default(cuid())
+  userId        String         @map("user_id")
+  name          String         @db.VarChar(200)
+  type          BusinessType   @default(other)
+  industry      String?        @db.VarChar(100)
+  description   String?        @db.Text
+  status        BusinessStatus @default(active)
+  currency      String         @default("USD") @db.VarChar(3)
+  logoUrl       String?        @map("logo_url") @db.VarChar(512)
+  website       String?        @db.VarChar(255)
+  phone         String?        @db.VarChar(30)
+  address       String?        @db.VarChar(500)
+  employeeCount Int?           @map("employee_count")
+  foundedDate   DateTime?      @map("founded_date") @db.Date
+  taxId         String?        @map("tax_id") @db.VarChar(50)
+
+  // Financial snapshot — refreshed by analytics jobs
+  totalRevenue  Decimal @default(0) @map("total_revenue") @db.Decimal(18, 2)
+  totalExpenses Decimal @default(0) @map("total_expenses") @db.Decimal(18, 2)
+  valuation     Decimal? @db.Decimal(18, 2)
+
+  walletId String? @map("wallet_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet    Wallet?   @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  expenses  Expense[]
+  invoices  Invoice[]
+  documents Document[]
+
+  @@index([userId, status])
+  @@index([userId, type])
+  @@map("businesses")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. PROPERTY
+// ─────────────────────────────────────────────────────────────
+
+model Property {
+  id            String         @id @default(cuid())
+  userId        String         @map("user_id")
+  name          String         @db.VarChar(200)
+  type          PropertyType   @default(residential)
+  status        PropertyStatus @default(owned)
+  address       String         @db.VarChar(500)
+  city          String?        @db.VarChar(100)
+  state         String?        @db.VarChar(100)
+  country       String?        @db.VarChar(60)
+  postalCode    String?        @map("postal_code") @db.VarChar(20)
+  latitude      Decimal?       @db.Decimal(10, 7)
+  longitude     Decimal?       @db.Decimal(10, 7)
+  description   String?        @db.Text
+  sizeSqft      Decimal?       @map("size_sqft") @db.Decimal(10, 2)
+  bedrooms      Int?
+  bathrooms     Int?
+  yearBuilt     Int?           @map("year_built")
+  currency      String         @default("USD") @db.VarChar(3)
+  purchaseValue Decimal?       @map("purchase_value") @db.Decimal(18, 2)
+  purchaseDate  DateTime?      @map("purchase_date") @db.Date
+  currentValue  Decimal?       @map("current_value") @db.Decimal(18, 2)
+  lastValuated  DateTime?      @map("last_valuated") @db.Date
+  amenities     Json? // ["pool","gym","parking"]
+  mortgageData  Json?          @map("mortgage_data") // {lender, rate, monthly, balance}
+  insuranceData Json?          @map("insurance_data")
+  imageUrls     Json?          @map("image_urls") // string[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenants   Tenant[]
+  expenses  Expense[]
+  documents Document[]
+  alerts    Alert[]
+  rents     RentRecord[]
+
+  @@index([userId, status])
+  @@index([userId, type])
+  @@map("properties")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. TENANT
+// ─────────────────────────────────────────────────────────────
+
+model Tenant {
+  id              String       @id @default(cuid())
+  propertyId      String       @map("property_id")
+  name            String       @db.VarChar(120)
+  email           String?      @db.VarChar(255)
+  phone           String?      @db.VarChar(30)
+  nationalId      String?      @map("national_id") @db.VarChar(80)
+  emergencyName   String?      @map("emergency_name") @db.VarChar(120)
+  emergencyPhone  String?      @map("emergency_phone") @db.VarChar(30)
+  leaseStartDate  DateTime     @map("lease_start_date") @db.Date
+  leaseEndDate    DateTime?    @map("lease_end_date") @db.Date
+  rentAmount      Decimal      @map("rent_amount") @db.Decimal(12, 2)
+  securityDeposit Decimal      @default(0) @map("security_deposit") @db.Decimal(12, 2)
+  paymentDueDay   Int          @default(1) @map("payment_due_day")
+  status          TenantStatus @default(active)
+  notes           String?      @db.Text
+  aiScore         Int?         @map("ai_score") // 0-100 payment reliability score
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  property  Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  rents     RentRecord[]
+  documents Document[]
+
+  @@index([propertyId, status])
+  @@index([leaseEndDate])
+  @@map("tenants")
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENT RECORD — one record per tenant per calendar month
+// ─────────────────────────────────────────────────────────────
+
+model RentRecord {
+  id             String     @id @default(cuid())
+  propertyId     String     @map("property_id")
+  tenantId       String     @map("tenant_id")
+  userId         String     @map("user_id")
+  month          String     @db.VarChar(7) // "YYYY-MM"
+  amountExpected Decimal    @map("amount_expected") @db.Decimal(12, 2)
+  amountPaid     Decimal    @default(0) @map("amount_paid") @db.Decimal(12, 2)
+  paymentDate    DateTime?  @map("payment_date") @db.Date
+  status         RentStatus @default(pending)
+  paymentMethod  String?    @map("payment_method") @db.VarChar(50)
+  receiptUrl     String?    @map("receipt_url") @db.VarChar(512)
+  lateFee        Decimal    @default(0) @map("late_fee") @db.Decimal(10, 2)
+  notes          String?    @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, month])
+  @@index([propertyId, month(sort: Desc)])
+  @@index([userId, status])
+  @@map("rent_records")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. EXPENSE — unified (business + property context)
+// ─────────────────────────────────────────────────────────────
+
+model Expense {
+  id               String          @id @default(cuid())
+  userId           String          @map("user_id")
+  businessId       String?         @map("business_id")
+  propertyId       String?         @map("property_id")
+  amount           Decimal         @db.Decimal(18, 2)
+  currency         String          @default("USD") @db.VarChar(3)
+  category         ExpenseCategory @default(other_business)
+  date             DateTime        @db.Date
+  description      String?         @db.VarChar(500)
+  vendor           String?         @db.VarChar(120)
+  paymentMethod    String?         @map("payment_method") @db.VarChar(50)
+  receiptUrl       String?         @map("receipt_url") @db.VarChar(512)
+  isRecurring      Boolean         @default(false) @map("is_recurring")
+  recurrenceRule   String?         @map("recurrence_rule") @db.VarChar(100)
+  isTaxDeductible  Boolean         @default(false) @map("is_tax_deductible")
+  taxCategory      String?         @map("tax_category") @db.VarChar(80)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date(sort: Desc)])
+  @@index([businessId, date(sort: Desc)])
+  @@index([propertyId, date(sort: Desc)])
+  @@index([userId, category])
+  @@index([userId, isTaxDeductible])
+  @@map("expenses")
+}
+
+// ─────────────────────────────────────────────────────────────
+// INVOICE — business billing
+// ─────────────────────────────────────────────────────────────
+
+model Invoice {
+  id             String        @id @default(cuid())
+  userId         String        @map("user_id")
+  businessId     String?       @map("business_id")
+  invoiceNumber  String        @unique @map("invoice_number") @db.VarChar(100)
+  clientName     String        @map("client_name") @db.VarChar(200)
+  clientEmail    String?       @map("client_email") @db.VarChar(255)
+  clientAddress  String?       @map("client_address") @db.VarChar(500)
+  currency       String        @default("USD") @db.VarChar(3)
+  subtotal       Decimal       @db.Decimal(18, 2)
+  taxAmount      Decimal       @default(0) @map("tax_amount") @db.Decimal(18, 2)
+  discountAmount Decimal       @default(0) @map("discount_amount") @db.Decimal(18, 2)
+  totalAmount    Decimal       @map("total_amount") @db.Decimal(18, 2)
+  status         InvoiceStatus @default(draft)
+  issueDate      DateTime      @default(now()) @map("issue_date") @db.Date
+  dueDate        DateTime?     @map("due_date") @db.Date
+  paidAt         DateTime?     @map("paid_at")
+  items          Json // [{description, qty, unitPrice, amount}]
+  notes          String?       @db.Text
+  pdfUrl         String?       @map("pdf_url") @db.VarChar(512)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([userId, dueDate])
+  @@index([businessId, status])
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 6. INVESTMENT
+// ─────────────────────────────────────────────────────────────
+
+model Investment {
+  id             String           @id @default(cuid())
+  userId         String           @map("user_id")
+  name           String           @db.VarChar(200)
+  ticker         String?          @db.VarChar(20)
+  type           InvestmentType   @default(manual_asset)
+  status         InvestmentStatus @default(active)
+  platform       String?          @db.VarChar(100)
+  currency       String           @default("USD") @db.VarChar(3)
+  quantity       Decimal?         @db.Decimal(24, 8)
+  avgBuyPrice    Decimal?         @map("avg_buy_price") @db.Decimal(18, 6)
+  amountInvested Decimal          @map("amount_invested") @db.Decimal(18, 2)
+  currentValue   Decimal          @map("current_value") @db.Decimal(18, 2)
+  realizedGain   Decimal          @default(0) @map("realized_gain") @db.Decimal(18, 2)
+  purchaseDate   DateTime?        @map("purchase_date") @db.Date
+  sellDate       DateTime?        @map("sell_date") @db.Date
+  riskLevel      Int?             @map("risk_level") // 1–5
+  goalTag        String?          @map("goal_tag") @db.VarChar(80)
+  notes          String?          @db.Text
+  priceHistory   Json?            @map("price_history") // [{date, value}] cached snapshot
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, status])
+  @@index([userId, goalTag])
+  @@index([ticker])
+  @@map("investments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7. WALLET
+// ─────────────────────────────────────────────────────────────
+
+model Wallet {
+  id                 String            @id @default(cuid())
+  userId             String            @map("user_id")
+  name               String            @db.VarChar(200)
+  accountType        WalletAccountType @default(checking) @map("account_type")
+  bankName           String?           @map("bank_name") @db.VarChar(100)
+  maskedNumber       String?           @map("masked_number") @db.VarChar(10)
+  currency           String            @default("USD") @db.VarChar(3)
+  balance            Decimal           @default(0) @db.Decimal(18, 2)
+  isDefault          Boolean           @default(false) @map("is_default")
+  color              String?           @db.VarChar(10)
+  icon               String?           @db.VarChar(50)
+  linkedBusinessId   String?           @map("linked_business_id") @db.VarChar(36)
+  linkedPropertyId   String?           @map("linked_property_id") @db.VarChar(36)
+  linkedInvestmentId String?           @map("linked_investment_id") @db.VarChar(36)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  businesses   Business[]
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("wallets")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 8. TRANSACTION
+// ─────────────────────────────────────────────────────────────
+
+model Transaction {
+  id            String            @id @default(cuid())
+  walletId      String            @map("wallet_id")
+  userId        String            @map("user_id")
+  type          TransactionType
+  status        TransactionStatus @default(completed)
+  amount        Decimal           @db.Decimal(18, 2)
+  balanceAfter  Decimal           @map("balance_after") @db.Decimal(18, 2)
+  currency      String            @default("USD") @db.VarChar(3)
+  category      String?           @db.VarChar(80)
+  merchant      String?           @db.VarChar(120)
+  description   String?           @db.VarChar(500)
+  date          DateTime          @db.Date
+  referenceId   String?           @map("reference_id") @db.VarChar(120)
+  toWalletId    String?           @map("to_wallet_id") @db.VarChar(36)
+  expenseId     String?           @map("expense_id") @db.VarChar(36)
+  invoiceId     String?           @map("invoice_id") @db.VarChar(36)
+  rentId        String?           @map("rent_id") @db.VarChar(36)
+  isTaxRelevant Boolean           @default(false) @map("is_tax_relevant")
+  attachmentUrl String?           @map("attachment_url") @db.VarChar(512)
+  tags          Json?
+  metadata      Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, date(sort: Desc)])
+  @@index([userId, date(sort: Desc)])
+  @@index([userId, category])
+  @@index([walletId, type])
+  @@index([referenceId])
+  @@map("transactions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9. DOCUMENT — unified across all contexts
+// ─────────────────────────────────────────────────────────────
+
+model Document {
+  id            String          @id @default(cuid())
+  userId        String          @map("user_id")
+  context       DocumentContext @default(other)
+  businessId    String?         @map("business_id")
+  propertyId    String?         @map("property_id")
+  tenantId      String?         @map("tenant_id")
+  vaultId       String?         @map("vault_id")
+  name          String          @db.VarChar(200)
+  fileUrl       String          @map("file_url") @db.VarChar(1024)
+  thumbnailUrl  String?         @map("thumbnail_url") @db.VarChar(1024)
+  mimeType      String?         @map("mime_type") @db.VarChar(100)
+  sizeBytes     Int?            @map("size_bytes")
+  type          DocumentType    @default(other)
+  category      String?         @db.VarChar(80)
+  tags          Json?
+  isPrivate     Boolean         @default(true) @map("is_private")
+  aiSummary     String?         @map("ai_summary") @db.Text
+  aiKeywords    Json?           @map("ai_keywords")
+  expiresAt     DateTime?       @map("expires_at")
+  cloudPublicId String?         @map("cloud_public_id") @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  vault    Vault?    @relation(fields: [vaultId], references: [id], onDelete: SetNull)
+
+  @@index([userId, context])
+  @@index([businessId])
+  @@index([propertyId])
+  @@index([userId, expiresAt])
+  @@map("documents")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 10. ALERT — unified (property, finance, investment, system)
+// ─────────────────────────────────────────────────────────────
+
+model Alert {
+  id            String        @id @default(cuid())
+  userId        String        @map("user_id")
+  type          AlertType
+  priority      AlertPriority @default(medium)
+  status        AlertStatus   @default(pending)
+  title         String        @db.VarChar(200)
+  message       String        @db.Text
+  propertyId    String?       @map("property_id")
+  businessId    String?       @map("business_id") @db.VarChar(36)
+  investmentId  String?       @map("investment_id") @db.VarChar(36)
+  scheduledFor  DateTime?     @map("scheduled_for")
+  snoozedUntil  DateTime?     @map("snoozed_until")
+  completedAt   DateTime?     @map("completed_at")
+  sourceTable   String?       @map("source_table") @db.VarChar(50)
+  sourceId      String?       @map("source_id") @db.VarChar(36)
+  autoGenerated Boolean       @default(false) @map("auto_generated")
+  emailSentAt   DateTime?     @map("email_sent_at")
+  pushSentAt    DateTime?     @map("push_sent_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, priority(sort: Desc)])
+  @@index([userId, scheduledFor])
+  @@index([userId, type, status])
+  @@index([propertyId])
+  @@map("alerts")
+}
+
+// ─────────────────────────────────────────────────────────────
+// VAULT — secure multi-entity container with access control
+// ─────────────────────────────────────────────────────────────
+
+model Vault {
+  id          String      @id @default(cuid())
+  userId      String      @map("user_id")
+  name        String      @db.VarChar(200)
+  description String?     @db.Text
+  status      VaultStatus @default(active)
+  color       String?     @db.VarChar(10)
+  icon        String?     @db.VarChar(50)
+  isPinned    Boolean     @default(false) @map("is_pinned")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members   VaultMember[]
+  documents Document[]
+
+  @@index([userId, status])
+  @@map("vaults")
+}
+
+model VaultMember {
+  id       String          @id @default(cuid())
+  vaultId  String          @map("vault_id")
+  userId   String          @map("user_id")
+  role     VaultMemberRole @default(viewer)
+  joinedAt DateTime        @default(now()) @map("joined_at")
+
+  vault Vault @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([vaultId, userId])
+  @@map("vault_members")
+}

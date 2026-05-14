@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Variables ────────────────────────────────────────────── */
+:root {
+  --color-accent: #00FF88;
+  --color-accent-secondary: #C0C0C0;
+  --color-dark: #0A0A0F;
+  --color-darker: #05050A;
+  --color-card: #111118;
+  --color-border: #1E1E2E;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', 'Inter', sans-serif;
+}
+
+[data-theme='light'] {
+  --color-dark: #F8F9FA;
+  --color-darker: #FFFFFF;
+  --color-card: #FFFFFF;
+  --color-border: #E9ECEF;
+  --color-accent-secondary: #495057;
+}
+
+/* ── Base Styles ──────────────────────────────────────────────── */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-dark);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background-color: rgba(0, 255, 136, 0.3);
+    color: #ffffff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-darker);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent);
+  }
+}
+
+/* ── Component Utilities ──────────────────────────────────────── */
+@layer components {
+  /* Glass Card */
+  .glass-card {
+    @apply relative rounded-2xl border border-vault-border backdrop-blur-xl;
+    background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+  }
+
+  /* Primary Button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-vault-dark
+           bg-vault-green transition-all duration-300
+           hover:scale-[1.02]
+           focus:outline-none
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+  .btn-primary:focus {
+    box-shadow: 0 0 0 2px rgba(0,255,136,0.5);
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold
+           border border-vault-border bg-vault-card text-white
+           transition-all duration-300
+           hover:bg-vault-card
+           focus:outline-none
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary:hover {
+    border-color: rgba(0,255,136,0.5);
+  }
+  .btn-secondary:focus {
+    box-shadow: 0 0 0 2px rgba(0,255,136,0.3);
+  }
+
+  /* Form Input */
+  .form-input {
+    @apply w-full rounded-xl border border-vault-border bg-vault-card px-4 py-3
+           text-white placeholder-gray-500 outline-none
+           transition-all duration-200;
+  }
+  .form-input:focus {
+    border-color: rgba(0,255,136,0.6);
+    box-shadow: 0 0 0 2px rgba(0,255,136,0.2);
+  }
+
+  /* Section Container */
+  .container-app {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-vault-green to-emerald-400 bg-clip-text text-transparent;
+  }
+}
+
+/* ── Utility Animations ───────────────────────────────────────── */
+@layer utilities {
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 0 5px var(--color-accent); }
+    to   { box-shadow: 0 0 20px var(--color-accent), 0 0 40px var(--color-accent); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-12px); }
+  }
+
+  /* ── Mobile touch utilities ─────────────────────────────────── */
+
+  /* Remove tap highlight on iOS */
+  .touch-callout-none {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  /* Momentum scroll for iOS */
+  .scroll-momentum {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Disable text selection on interactive elements */
+  .select-none-touch {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Native-feel button active state */
+  .active-scale:active {
+    transform: scale(0.94);
+    transition: transform 80ms ease;
+  }
+
+  /* Glass card variant for mobile (stronger blur) */
+  .glass-card-mobile {
+    @apply rounded-2xl;
+    border: 1px solid rgba(30,30,46,0.6);
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* Safe area padding bottom */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Path animation for SVG sparklines */
+  @keyframes drawPath {
+    from { stroke-dashoffset: 1000; }
+    to   { stroke-dashoffset: 0; }
+  }
+}
+
+/* ── Auth page responsive layout ─────────────────────────────── */
+
+/* Info column: hidden by default (mobile) */
+.auth-info-col {
+  display: none !important;
+}
+
+/* Always hide the legacy mobile-only heading duplicate */
+.auth-info-mobile {
+  display: none !important;
+}
+
+/* Desktop heading inside card: visible by default (mobile) */
+.auth-heading-desktop {
+  display: block;
+  text-align: center;    /* heading + subtext centered */
+  margin-bottom: 20px;
+}
+
+/* Labels and form elements stay left-aligned always */
+.auth-form-wrap label {
+  text-align: left !important;
+}
+
+
+/* ── Desktop (≥960px): side-by-side equal height ───────────────── */
+@media (min-width: 960px) {
+  /* Show the info column — no gap, use padding + border as separator */
+  .auth-info-col {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 320px;
+    padding: 40px 36px 40px 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  /* Right column: left padding to mirror the separator */
+  .auth-right-col {
+    padding-left: 48px;
+  }
+
+  /* Hide in-card heading on desktop — InfoCol tagline replaces it */
+  .auth-heading-desktop {
+    display: none;
+  }
+}
+
+
+
