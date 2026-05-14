@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # VaultEXP — Financial Ecosystem OS
 
 > Premium AI-powered SaaS platform for business assets, finance, and property management. Rebuilt for performance, scalability, and modern financial-grade standards.
@@ -104,3 +105,7 @@ npm run dev          # runs both client + server concurrently
 ## 📄 License
 
 MIT © VaultEXP Team
+=======
+# vaultEXP-webApp
+Under Developments 
+>>>>>>> bac8455d8d0bb20539641b1a4e24ba8e9be1871b
