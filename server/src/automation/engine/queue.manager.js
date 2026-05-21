@@ -1,3 +1,10 @@
+if (process.env.REDIS_DISABLED === 'true') {
+  console.log('⚠️ Queue manager disabled because Redis is disabled');
+  module.exports = {};
+  return;
+}
+
+
 const { Queue, Worker } = require('bullmq');
 const IORedis = require('ioredis');
 

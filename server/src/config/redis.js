@@ -1,37 +1,21 @@
-/**
- * Redis Connection Config
- */
-const { createClient } = require('redis');
-const logger = require('../utils/logger');
+let redis = null;
 
-let client = null;
+if (!process.env.REDIS_DISABLED) {
+  const Redis = require('ioredis');
 
-async function connectRedis() {
-  if (client) return client;
+  redis = new Redis(
+    process.env.REDIS_URL || 'redis://localhost:6379'
+  );
 
-  try {
-    client = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-      socket: {
-        reconnectStrategy: false // Disable auto-reconnect to prevent log spam
-      }
-    });
+  redis.on('connect', () => {
+    console.log('✅ Redis connected');
+  });
 
-    client.on('error', (err) => logger.error('Redis error:', err));
-    client.on('connect', () => logger.info('Redis client connected'));
-
-    await client.connect();
-    return client;
-  } catch (error) {
-    logger.warn('Failed to connect to Redis. Caching will be disabled.');
-    client = null;
-    return null;
-  }
+  redis.on('error', (err) => {
+    console.warn('⚠️ Redis disabled/unavailable:', err.message);
+  });
+} else {
+  console.log('⚠️ Redis disabled');
 }
 
-function getRedisClient() {
-  if (!client) throw new Error('Redis not connected. Call connectRedis() first.');
-  return client;
-}
-
-module.exports = { connectRedis, getRedisClient };
+module.exports = redis;
