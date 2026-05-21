@@ -1,3 +1,6 @@
+module.exports = {};
+return;
+
 if (process.env.REDIS_DISABLED === 'true') {
   console.log('⚠️ Queue manager disabled because Redis is disabled');
   module.exports = {};
