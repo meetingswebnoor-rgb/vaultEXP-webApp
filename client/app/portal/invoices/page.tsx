@@ -31,7 +31,8 @@ export default function PortalInvoicesPage() {
   }, []);
 
   const downloadPDF = (id: string) => {
-    window.open(`http://localhost:5000/api/financial/invoices/${id}/pdf`, '_blank');
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vaultexp-webapp-production.up.railway.app/api';
+    window.open(`${baseUrl}/financial/invoices/${id}/pdf`, '_blank');
   };
 
   const handlePaymentSuccess = async (id: string) => {

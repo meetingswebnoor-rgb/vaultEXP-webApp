@@ -49,8 +49,10 @@ function LoginInner() {
     setLoading(true); setError(null);
     try {
       const res = await AuthService.login({ email, password });
+      // Backend response: { success, data: { user, accessToken } }
       const user = res.data.user;
-      login(res.data.accessToken, user);
+      const token = res.data.accessToken;
+      login(token, user);
       const isDefaultCallback = !searchParams.get('callbackUrl') || searchParams.get('callbackUrl') === '/dashboard';
       
       if (!user.isApproved && (user.role === 'ADMIN' || user.role === 'CLIENT')) {
@@ -174,7 +176,9 @@ export function AuthSignupForm() {
     setLoading(true); setError(null);
     try {
       const res = await AuthService.signup({ name, email, password });
-      const { token, user } = res;
+      // Backend response: { success, token, user }
+      const token = res.token;
+      const user = res.user;
       login(token, user);
       if (user.role === 'CLIENT') {
         window.location.href = '/portal';

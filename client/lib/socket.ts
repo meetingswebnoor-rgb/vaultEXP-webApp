@@ -13,7 +13,9 @@ export const getSocket = () => {
     return null;
   }
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  // Socket connects to backend ROOT (without /api suffix)
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vaultexp-webapp-production.up.railway.app/api';
+  const backendUrl = apiUrl.replace(/\/api$/, '');
 
   socket = io(backendUrl, {
     auth: { token }

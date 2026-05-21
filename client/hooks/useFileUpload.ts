@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from 'react';
-import axios from 'axios';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
@@ -108,7 +107,7 @@ export function useFileUpload({ onUploadSuccess, context }: UseFileUploadProps =
       }
 
     } catch (error: any) {
-      if (axios.isCancel(error)) {
+      if (error?.code === 'ERR_CANCELED' || error?.name === 'AbortError' || error?.message === 'canceled') {
         setFiles((prev) => prev.map((f) => 
           f.id === uploadFile.id ? { ...f, status: 'cancelled', progress: 0 } : f
         ));

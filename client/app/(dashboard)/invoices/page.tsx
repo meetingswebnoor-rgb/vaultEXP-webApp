@@ -32,8 +32,9 @@ export default function InvoicesPage() {
 
   const downloadPDF = async (id: string, number: string) => {
     try {
-      // Direct browser download approach
-      window.open(`http://localhost:5000/api/financial/invoices/${id}/pdf`, '_blank');
+      // Use the production backend URL for direct browser download
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vaultexp-webapp-production.up.railway.app/api';
+      window.open(`${baseUrl}/financial/invoices/${id}/pdf`, '_blank');
     } catch (err) {
       console.error('Failed to download PDF', err);
     }

@@ -29,7 +29,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       return; 
     }
 
-    const socketInstance = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+    // Socket connects to backend ROOT (without /api suffix)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vaultexp-webapp-production.up.railway.app/api';
+    const socketUrl = apiUrl.replace(/\/api$/, '');
+    const socketInstance = io(socketUrl, {
       auth: { token: activeToken },
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Loader2, FileText, Clock, X, SlidersHorizontal, ChevronRight, Tag } from 'lucide-react';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils/cn';
 
@@ -37,9 +37,8 @@ export function IntelligentSearchBar() {
     const delayDebounceFn = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/documents/search`, {
+        const res = await api.get('/documents/search', {
           params: { q: query, limit: 5 },
-          headers: { Authorization: `Bearer ${token}` }
         });
         setResults(res.data.documents || []);
       } catch (error) {

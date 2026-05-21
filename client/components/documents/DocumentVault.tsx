@@ -8,7 +8,7 @@ import {
   Trash2, Eye, Plus, BrainCircuit, X, ChevronRight, ChevronDown
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '@/lib/api';
 import { cn } from '@/lib/utils/cn';
 import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -17,7 +17,6 @@ import { IntelligentSearchBar } from '@/components/documents/IntelligentSearchBa
 import { DocumentPreviewModal } from '@/components/documents/DocumentPreviewModal';
 import { CreateFolderModal } from '@/components/documents/CreateFolderModal';
 import { DocumentChatModal } from '@/components/documents/DocumentChatModal';
-import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/ui/Toast';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -99,9 +98,6 @@ function EmptyState({ label, onClear }: { label: string; onClear?: () => void })
 export function DocumentVault() {
   const { isDesktop } = useBreakpoint();
   const queryClient = useQueryClient();
-  const token = useAuthStore((s) => s.token);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
   const { showToast } = useToast();
 
   // Filters
@@ -120,14 +116,14 @@ export function DocumentVault() {
       id: previewDoc.id,
       name: previewDoc.originalName,
       type: previewDoc.fileType,
-      url: `${API_URL}/documents/download/${previewDoc.id}`,
+      url: `${process.env.NEXT_PUBLIC_API_URL || 'https://vaultexp-webapp-production.up.railway.app/api'}/documents/download/${previewDoc.id}`,
       aiSummary: previewDoc.aiSummary || undefined,
       aiKeywords: undefined,
       extractedText: undefined,
       confidenceScore: previewDoc.aiAnalysis?.confidence || 95,
       riskFlags: []
     };
-  }, [previewDoc, API_URL]);
+  }, [previewDoc]);
   const [showUpload, setShowUpload] = useState(false);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -137,36 +133,31 @@ export function DocumentVault() {
   const { data: documents = [], isLoading: docsLoading } = useQuery<Doc[]>({
     queryKey: ['documents', activeCategory, activeFolder, searchQuery],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/documents/search`, {
+      const res = await api.get('/documents/search', {
         params: { 
           type: activeCategory, 
           folderId: activeFolder,
           q: searchQuery
         },
-        headers: { Authorization: `Bearer ${token}` }
       });
       return res.data.documents;
     },
-    enabled: !!token
+    enabled: true
   });
 
   const { data: folders = [] } = useQuery<DocFolder[]>({
     queryKey: ['document-folders'],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/documents/folders`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/documents/folders');
       return res.data.folders;
     },
-    enabled: !!token
+    enabled: true
   });
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
-      return axios.put(`${API_URL}/documents/${id}/archive`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      return api.put(`/documents/${id}/archive`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });

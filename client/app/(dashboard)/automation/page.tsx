@@ -6,7 +6,7 @@ import { Zap, Plus, Play, ArrowRight, ToggleRight, BrainCircuit, Loader2, Sparkl
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/Toast';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils/cn';
 
@@ -17,28 +17,28 @@ export default function AutomationDashboard() {
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
   const token = useAuthStore((s: any) => s.token);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
     async function fetchData() {
       if (!token) return;
       try {
         const [dashRes, logsRes] = await Promise.all([
-          axios.get(`${API_URL}/automation/dashboard`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}/automation/logs`, { headers: { Authorization: `Bearer ${token}` } })
+          api.get('/automation/dashboard'),
+          api.get('/automation/logs')
         ]);
         setStats(dashRes.data.data.stats);
         setAiSuggestions(dashRes.data.data.aiSuggestions);
         setLogs(logsRes.data.data);
-      } catch (err) {
-        console.error(err);
+      } catch (error: any) {
+        if (error?.code === 'ERR_CANCELED' || error?.message === 'canceled') return;
+        console.error(error);
         showToast('Failed to load automation data.', 'error');
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [API_URL, token]);
+  }, [token]);
 
   const activeAutomations = [
     { id: '1', name: 'Invoice Overdue Collection', trigger: 'Invoice Overdue', active: true, runs: 120, type: 'standard' },
