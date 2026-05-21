@@ -14,6 +14,7 @@ export function calculateInvestmentPerformance(currentValue: number, amountInves
 }
 
 export function generateDistributionData(investments: any[]) {
+  if (!Array.isArray(investments)) return [];
   const typeMap: Record<string, number> = {};
   investments.forEach(inv => {
     const type = inv.type || 'other';
@@ -30,7 +31,7 @@ export function generateDistributionData(investments: any[]) {
 }
 
 export function generateGrowthData(investments: any[]) {
-  if (!investments || investments.length === 0) return [];
+  if (!Array.isArray(investments) || investments.length === 0) return [];
   
   // Sort investments by date ascending
   const sorted = [...investments].sort((a, b) => {

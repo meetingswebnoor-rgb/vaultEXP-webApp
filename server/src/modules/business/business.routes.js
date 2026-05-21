@@ -14,4 +14,7 @@ router.route('/:id')
   .put(businessController.updateBusiness)
   .delete(businessController.deleteBusiness);
 
+// AI Business Advisor endpoint
+router.get('/:id/ai-advice', businessController.getAIAdvice);
+
 module.exports = router;

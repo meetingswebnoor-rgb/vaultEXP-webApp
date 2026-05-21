@@ -66,8 +66,10 @@ export function DesktopWalletLayout({
 
   const selectedWallet = wallets.find(w => w._id === selectedWalletId) || (wallets.length > 0 ? wallets[0] : null);
   
-  const allTransactions = wallets.flatMap(w => 
-    w.transactions.map(t => ({ ...t, accountName: w.accountName, walletId: w._id }))
+  const allTransactions = (wallets || []).flatMap(w => 
+    Array.isArray(w.transactions) 
+      ? w.transactions.map(t => ({ ...t, accountName: w.accountName, walletId: w._id }))
+      : []
   ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const displayedTransactions = selectedWalletId 

@@ -22,7 +22,7 @@ function GoogleButtonInner({
   callbackUrl?: string;
 }) {
   const router   = useRouter();
-  const setAuth  = useAuthStore((s) => s.setAuth);
+  const loginStore = useAuthStore((s) => s.login);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
@@ -46,7 +46,7 @@ function GoogleButtonInner({
           googleUser, // send user info as well for direct use
         });
         const { user, accessToken } = res.data.data;
-        setAuth(user, accessToken);
+        loginStore(accessToken, user);
         router.replace(callbackUrl);
       } catch (err: any) {
         setError(err?.response?.data?.message ?? 'Google sign-in failed. Try again.');

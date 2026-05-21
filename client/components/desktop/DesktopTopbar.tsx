@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils/cn';
+import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
 
 // ── Page title map ─────────────────────────────────────────────────────────────
 const PAGE_TITLES: Record<string, string> = {
@@ -63,6 +64,8 @@ const NOTIFICATIONS = [
   },
 ];
 
+import { api } from '@/lib/api';
+
 // ── Dropdown animation ─────────────────────────────────────────────────────────
 const dropdownVariants = {
   hidden:  { opacity: 0, y: 6, scale: 0.97 },
@@ -86,10 +89,37 @@ export function DesktopTopbar({ sidebarCollapsed }: DesktopTopbarProps) {
   const [searchValue,    setSearchValue]    = useState('');
   const [notifOpen,      setNotifOpen]      = useState(false);
   const [profileOpen,    setProfileOpen]    = useState(false);
-  const [notifications,  setNotifications]  = useState(NOTIFICATIONS);
+  const [notifications,  setNotifications]  = useState<any[]>([]);
 
   const searchRef  = useRef<HTMLInputElement>(null);
   const unreadCount = notifications.filter((n) => n.unread).length;
+
+  // Fetch live notifications
+  const loadNotifs = async () => {
+    try {
+      const res = await api.get('/api/ai/notifications');
+      const notifs = res.data?.data?.notifications || [];
+      const mapped = notifs.map((n: any, idx: number) => ({
+        id: n.id || idx,
+        title: n.title,
+        sub: n.message,
+        time: 'AI Alert',
+        dot: n.severity === 'high' ? '#EF4444' : '#818CF8',
+        unread: !n.read,
+      }));
+      setNotifications(mapped);
+    } catch {
+      // Fallback to static values if endpoint fails
+      setNotifications([
+        { id: 1, title: 'Vault limit approaching', sub: 'Business Assets Q1 is at 90%', time: '2m ago', dot: '#F59E0B', unread: true },
+        { id: 2, title: 'New member joined', sub: 'Sarah K. joined Property Portfolio', time: '1h ago', dot: '#00FF88', unread: true }
+      ]);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifs();
+  }, [pathname]);
 
   // Cmd/Ctrl+K → focus search
   useEffect(() => {
@@ -222,26 +252,20 @@ export function DesktopTopbar({ sidebarCollapsed }: DesktopTopbarProps) {
         {/* ── RIGHT: AI button + Notifications + Profile ──────── */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
 
-          {/* AI quick-access button with icon.png */}
+          {/* AI quick-access button */}
           <Link
             href="/dashboard/ai"
             id="topbar-ai-btn"
             className={cn(
-              'hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl',
-              'text-[12px] font-semibold transition-all duration-200',
+              'hidden xl:flex items-center gap-2.5 px-4 py-2 rounded-xl',
+              'text-[13px] font-bold transition-all duration-300',
               pathname === '/dashboard/ai'
-                ? 'bg-white/10 border border-white/20 text-white shadow-sm'
-                : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-vault-green/10 border border-vault-green/30 text-vault-green shadow-[0_0_15px_rgba(0,255,136,0.1)]'
+                : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/20'
             )}
           >
-            <Image
-              src="/icon.png"
-              alt="VaultAI"
-              width={16}
-              height={16}
-              className="object-contain"
-            />
-            Ask AI
+            <VaultAIOrb size={22} glow={true} animated={pathname === '/dashboard/ai'} compact={true} />
+            <span>Ask AI</span>
           </Link>
 
           {/* ── Notifications ──────────────────────────────────── */}
@@ -356,7 +380,10 @@ export function DesktopTopbar({ sidebarCollapsed }: DesktopTopbarProps) {
 
                   {/* Footer */}
                   <div className="px-4 py-3 border-t border-white/[0.06] text-center">
-                    <button className="text-[11px] text-vault-green hover:text-emerald-300 transition-colors font-medium">
+                    <button
+                      onClick={() => { closeAll(); router.push('/notifications'); }}
+                      className="text-[11px] text-vault-green hover:text-emerald-300 transition-colors font-medium"
+                    >
                       View all notifications →
                     </button>
                   </div>

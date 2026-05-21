@@ -31,7 +31,10 @@ const protect = (req, res, next) => {
     
     req.user = { 
       id: decoded.id,
-      role: decoded.role
+      role: decoded.role,
+      isApproved: decoded.isApproved,
+      clearanceLevel: decoded.clearanceLevel,
+      isActive: decoded.isActive
     };
     
     next();
@@ -45,5 +48,41 @@ const protect = (req, res, next) => {
     });
   }
 };
+/**
+ * Restrict access to specific roles.
+ * Must be used AFTER protect middleware.
+ * @param {...string} roles - Allowed roles (e.g., 'admin', 'superadmin')
+ */
+const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      logger.warn(`[AUTH MIDDLEWARE] Access forbidden. User role: ${req.user?.role}, Required: ${roles.join(', ')}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden — You do not have permission to perform this action',
+        errorCode: 'FORBIDDEN_ROLE_RESTRICTION'
+      });
+    }
 
-module.exports = { protect, authenticate: protect };
+    if (req.user.role !== 'SUPER_ADMIN') {
+      if (!req.user.isActive) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden — Your account is inactive or suspended.',
+          errorCode: 'FORBIDDEN_INACTIVE'
+        });
+      }
+      if (!req.user.isApproved && (req.user.role === 'ADMIN' || req.user.role === 'CLIENT')) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden — Your account is awaiting administrator approval.',
+          errorCode: 'FORBIDDEN_PENDING_APPROVAL'
+        });
+      }
+    }
+
+    next();
+  };
+};
+
+module.exports = { protect, authenticate: protect, restrictTo };

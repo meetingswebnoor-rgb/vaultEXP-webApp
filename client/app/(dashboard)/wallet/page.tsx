@@ -39,11 +39,13 @@ interface Wallet {
 
 interface WalletResponse {
   success: boolean;
-  data: Wallet[];
-  summary: {
-    totalBalance: number;
-    totalIncome: number;
-    totalExpenses: number;
+  data: {
+    wallets: Wallet[];
+    summary: {
+      totalBalance: number;
+      totalIncome: number;
+      totalExpenses: number;
+    };
   };
 }
 
@@ -62,8 +64,8 @@ export default function WalletPage() {
     retry: 1
   });
 
-  const wallets = data?.data ?? [];
-  const summary = data?.summary ?? { totalBalance: 0, totalIncome: 0, totalExpenses: 0 };
+  const wallets = Array.isArray(data?.data?.wallets) ? data.data.wallets : [];
+  const summary = data?.data?.summary ?? { totalBalance: 0, totalIncome: 0, totalExpenses: 0 };
   const hasWallets = wallets.length > 0;
 
   if (isLoading) {

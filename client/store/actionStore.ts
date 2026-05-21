@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ActionType = 'expense' | 'document' | 'tenant' | 'property' | 'business' | 'investment' | 'wallet' | 'transaction' | null;
+export type ActionType = 'expense' | 'document' | 'tenant' | 'property' | 'business' | 'investment' | 'wallet' | 'transaction' | 'card' | 'alert' | 'invoice' | null;
 
 interface ActionState {
   activeAction: ActionType;

@@ -7,11 +7,13 @@ import { BusinessStatsHero } from '@/components/mobile/business/BusinessStatsHer
 import { BusinessActionGrid } from '@/components/mobile/business/BusinessActionGrid';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
+import { CollaborationFeed } from '@/features/collaboration';
 
 const TABS = [
   { id: 'expenses', label: 'Expenses' },
   { id: 'invoices', label: 'Invoices' },
   { id: 'documents', label: 'Documents' },
+  { id: 'collaboration', label: 'Collaboration' },
 ];
 
 export default function BusinessDashboardPage({ params }: { params: { id: string } }) {
@@ -85,6 +87,11 @@ export default function BusinessDashboardPage({ params }: { params: { id: string
             {activeTab === 'documents' && (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-sm">No documents uploaded</p>
+              </div>
+            )}
+            {activeTab === 'collaboration' && (
+              <div className="h-[500px]">
+                <CollaborationFeed resourceType="business" resourceId={params.id} />
               </div>
             )}
           </motion.div>

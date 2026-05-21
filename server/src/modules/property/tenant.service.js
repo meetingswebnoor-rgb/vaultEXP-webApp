@@ -8,6 +8,7 @@
 
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../../utils/appError');
+const eventBus = require('../../lib/eventBus');
 
 async function assertPropertyOwner(propertyId, userId) {
   const prop = await prisma.property.findUnique({
@@ -46,6 +47,7 @@ class TenantService {
       },
     });
 
+    eventBus.emit('tenant.created', { tenantId: tenant.id, propertyId, userId, name: tenant.name });
 
     return tenant;
   }

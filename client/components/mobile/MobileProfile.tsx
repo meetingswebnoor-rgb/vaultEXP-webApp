@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/cn';
+import Image from 'next/image';
 
 export function MobileProfile() {
   const { user, clearAuth, updateSettings } = useAuthStore();
@@ -47,11 +48,6 @@ export function MobileProfile() {
     }
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, x: -10 },
-    visible: { opacity: 1, x: 0 }
-  };
-
   return (
     <motion.div 
       className="flex flex-col gap-6 pb-24"
@@ -64,11 +60,14 @@ export function MobileProfile() {
         <div className="relative">
           <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-vault-green/20 to-blue-500/20 p-1 border border-white/10 relative z-10">
             {user?.avatarUrl ? (
-              <img 
-                src={user.avatarUrl} 
-                alt={user.name} 
-                className="w-full h-full rounded-full object-cover"
-              />
+              <div className="relative w-full h-full rounded-full overflow-hidden">
+                <Image 
+                  src={user.avatarUrl} 
+                  alt={user.name || 'Avatar'} 
+                  fill
+                  className="object-cover"
+                />
+              </div>
             ) : (
               <div className="w-full h-full rounded-full bg-vault-darker flex items-center justify-center">
                 <User size={40} className="text-vault-green" />

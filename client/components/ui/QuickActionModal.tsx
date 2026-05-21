@@ -1,9 +1,17 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Briefcase, Building2, CreditCard, UploadCloud, ChevronRight, Receipt, FileText } from 'lucide-react';
+import { X, Briefcase, Building2, CreditCard, UploadCloud, ChevronRight, Receipt, FileText, User, TrendingUp, AlertCircle, Wallet } from 'lucide-react';
 import { useActionStore, ActionType } from '@/store/actionStore';
-import { useRouter } from 'next/navigation';
+import { AddBusinessForm } from '@/components/forms/AddBusinessForm';
+import { AddPropertyForm } from '@/components/forms/AddPropertyForm';
+import { AddWalletForm } from '@/components/forms/AddWalletForm';
+import { AddInvestmentForm } from '@/components/forms/AddInvestmentForm';
+import { AddTenantForm } from '@/components/forms/AddTenantForm';
+import { AddDocumentForm } from '@/components/forms/AddDocumentForm';
+import { AddExpenseForm } from '@/components/forms/AddExpenseForm';
+import { AddInvoiceForm } from '@/components/forms/AddInvoiceForm';
+import { LogTransactionForm } from '@/components/forms/LogTransactionForm';
 
 const ACTION_CONFIGS: Record<NonNullable<ActionType>, { title: string; icon: any; color: string; desc: string }> = {
   business: {
@@ -32,7 +40,7 @@ const ACTION_CONFIGS: Record<NonNullable<ActionType>, { title: string; icon: any
   },
   expense: {
     title: 'Add Expense',
-    desc: 'Log a business expense to keep your books balanced.',
+    desc: 'Log a business or property expense to keep your books balanced.',
     icon: Receipt,
     color: '#F87171' // red/rose
   },
@@ -41,12 +49,71 @@ const ACTION_CONFIGS: Record<NonNullable<ActionType>, { title: string; icon: any
     desc: 'Generate a new invoice for your clients.',
     icon: FileText,
     color: '#3B82F6' // blue
+  },
+  tenant: {
+    title: 'Add Tenant',
+    desc: 'Register a new tenant to your property.',
+    icon: User,
+    color: '#00FF88'
+  },
+  investment: {
+    title: 'New Investment',
+    desc: 'Track a new stock, crypto or asset.',
+    icon: TrendingUp,
+    color: '#F59E0B'
+  },
+  wallet: {
+    title: 'Create Wallet',
+    desc: 'Add a new digital or fiat wallet.',
+    icon: Wallet,
+    color: '#00FF88'
+  },
+  transaction: {
+    title: 'Log Transaction',
+    desc: 'Record a manual transfer or payment.',
+    icon: Receipt,
+    color: '#3B82F6'
+  },
+  alert: {
+    title: 'Set Alert',
+    desc: 'Configure a notification for your assets.',
+    icon: AlertCircle,
+    color: '#F87171'
   }
 };
 
 export function QuickActionModal() {
   const { activeAction, closeAction } = useActionStore();
-  const router = useRouter();
+
+  const renderForm = () => {
+    switch (activeAction) {
+      case 'business':   return <AddBusinessForm />;
+      case 'property':   return <AddPropertyForm />;
+      case 'wallet':     return <AddWalletForm />;
+      case 'investment': return <AddInvestmentForm />;
+      case 'tenant':     return <AddTenantForm />;
+      case 'document':   return <AddDocumentForm />;
+      case 'expense':    return <AddExpenseForm />;
+      case 'invoice':    return <AddInvoiceForm />;
+      case 'transaction': return <LogTransactionForm />;
+      // Fallback for actions not yet fully implemented with dedicated forms
+      default: return (
+        <div className="px-8 py-12 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-gray-500">
+            <AlertCircle size={32} />
+          </div>
+          <h4 className="text-white font-semibold">Action Not Ready</h4>
+          <p className="text-xs text-gray-400">The &quot;{activeAction}&quot; module is currently under development.</p>
+          <button 
+            onClick={closeAction}
+            className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10"
+          >
+            Go Back
+          </button>
+        </div>
+      );
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -67,7 +134,7 @@ export function QuickActionModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md bg-vault-card border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-black/50 flex flex-col"
+            className="relative w-full max-w-lg bg-vault-card border border-white/[0.08] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/50 flex flex-col max-h-[90vh]"
           >
             {(() => {
               const config = ACTION_CONFIGS[activeAction];
@@ -76,27 +143,27 @@ export function QuickActionModal() {
               return (
                 <>
                   {/* Header */}
-                  <div className="px-8 py-6 border-b border-white/5 flex items-start justify-between relative overflow-hidden">
+                  <div className="px-8 py-7 border-b border-white/[0.05] flex items-start justify-between relative overflow-hidden bg-white/[0.01]">
                     {/* Ambient Glow */}
                     <div 
-                      className="absolute top-0 right-0 w-32 h-32 blur-[50px] opacity-20 pointer-events-none rounded-full"
+                      className="absolute top-0 right-0 w-48 h-48 blur-[60px] opacity-20 pointer-events-none rounded-full"
                       style={{ backgroundColor: config.color }}
                     />
                     
-                    <div className="flex items-center gap-4 relative z-10">
+                    <div className="flex items-center gap-5 relative z-10">
                       <div 
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center border"
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-inner"
                         style={{ 
                           backgroundColor: `${config.color}15`, 
                           borderColor: `${config.color}30`,
                           color: config.color
                         }}
                       >
-                        <Icon size={24} strokeWidth={1.8} />
+                        <Icon size={28} strokeWidth={1.5} />
                       </div>
                       <div>
-                        <h3 className="text-xl font-display font-bold text-white">{config.title}</h3>
-                        <p className="text-xs text-gray-400 mt-1 leading-snug max-w-[200px]">
+                        <h3 className="text-2xl font-display font-bold text-white tracking-tight">{config.title}</h3>
+                        <p className="text-xs text-gray-500 mt-1 leading-relaxed max-w-[240px]">
                           {config.desc}
                         </p>
                       </div>
@@ -104,126 +171,16 @@ export function QuickActionModal() {
                     
                     <button 
                       onClick={closeAction}
-                      className="w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors relative z-10"
+                      className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all relative z-10"
                     >
                       <X size={20} />
                     </button>
                   </div>
 
-                  {/* Form Body */}
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const currentAction = activeAction;
-                      
-                      // Mock transition delay for premium feel
-                      setTimeout(() => {
-                        closeAction();
-                        
-                        // Navigate to relevant section
-                        if (currentAction === 'property') router.push('/property');
-                        if (currentAction === 'business') router.push('/business');
-                        if (currentAction === 'expense') router.push('/property'); // Typically expenses are per property
-                        if (currentAction === 'invoice') router.push('/business');
-                      }, 400);
-                    }}
-                    className="px-8 py-8 space-y-5"
-                  >
-                    {activeAction === 'expense' ? (
-                      <>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Amount</label>
-                            <input 
-                              type="number" 
-                              placeholder="0.00"
-                              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:border-vault-green/50"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Category</label>
-                            <select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-gray-400 focus:border-vault-green/50 appearance-none">
-                              <option>Operational</option>
-                              <option>Marketing</option>
-                              <option>Software</option>
-                              <option>Payroll</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Notes / Description</label>
-                          <textarea 
-                            placeholder="What was this for?"
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:border-vault-green/50 h-24 resize-none"
-                          />
-                        </div>
-                      </>
-                    ) : activeAction === 'invoice' ? (
-                      <>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Client Name</label>
-                          <input 
-                            type="text" 
-                            placeholder="e.g. Acme Corp"
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:border-vault-green/50"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Total Amount</label>
-                            <input 
-                              type="number" 
-                              placeholder="0.00"
-                              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:border-vault-green/50"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Due Date</label>
-                            <input 
-                              type="date" 
-                              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-gray-400 focus:border-vault-green/50 appearance-none"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">
-                          Asset Name
-                        </label>
-                        <input 
-                          type="text" 
-                          autoFocus
-                          placeholder="e.g. Acme Corporation" 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-vault-green/50 transition-colors"
-                        />
-                      </div>
-                    )}
-                    
-                    <button 
-                      type="submit"
-                      onClick={() => {
-                        if (activeAction !== 'expense' && activeAction !== 'invoice') {
-                          setTimeout(() => {
-                            const section = document.getElementById("overview-section");
-                            if (section) section.scrollIntoView({ behavior: 'smooth' });
-                          }, 450);
-                        }
-                      }}
-                      className="w-full mt-2 flex items-center justify-between px-6 py-4 rounded-xl font-bold text-sm text-black transition-all group"
-                      style={{ 
-                        backgroundColor: config.color,
-                        boxShadow: `0 8px 24px ${config.color}30`
-                      }}
-                    >
-                      <span>
-                        {activeAction === 'expense' ? 'Save Expense' : 
-                         activeAction === 'invoice' ? 'Create Invoice' : 
-                         'Continue Setup'}
-                      </span>
-                      <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </form>
+                  {/* Form Body - Scrollable */}
+                  <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {renderForm()}
+                  </div>
                 </>
               );
             })()}

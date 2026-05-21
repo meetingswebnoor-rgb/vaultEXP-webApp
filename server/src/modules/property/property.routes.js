@@ -95,6 +95,7 @@ router.get('/:id/analytics', controller.getAnalytics);
 
 // ── AI Context ───────────────────────────────────────────────
 router.get('/:id/ai-context', controller.getAIContext);
+router.get('/:id/ai-advice', controller.getAIAdvice);
 
 // ── Property Single (Wildcard) MUST be last ───────────────────
 router

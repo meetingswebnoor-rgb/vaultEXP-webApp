@@ -29,12 +29,19 @@ interface DashboardCustomizerProps {
   onClose: () => void;
 }
 
+interface LayoutItem {
+  id: string;
+  label: string;
+  visible: boolean;
+  order: number;
+}
+
 export function DashboardCustomizer({ onClose }: DashboardCustomizerProps) {
   const { user, updateSettings } = useAuthStore();
-  const currentLayout = (user?.settings?.dashboardLayout && Array.isArray(user.settings.dashboardLayout) && user.settings.dashboardLayout.length > 0)
+  const currentLayout: LayoutItem[] = (user?.settings?.dashboardLayout && Array.isArray(user.settings.dashboardLayout) && user.settings.dashboardLayout.length > 0)
     ? user.settings.dashboardLayout
     : DEFAULT_LAYOUT;
-  const [layout, setLayout] = useState(currentLayout);
+  const [layout, setLayout] = useState<LayoutItem[]>(currentLayout);
   const [isSaving, setIsSaving] = useState(false);
 
   const toggleVisibility = (id: string) => {

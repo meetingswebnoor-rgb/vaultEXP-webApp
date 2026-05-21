@@ -1,15 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Lock, CheckCircle, ArrowRight } from 'lucide-react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { AuthInputField, AuthSubmitBtn, AuthErrorBanner } from './SharedAuthComponents';
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const token = searchParams.get('token');
 
   const [password, setPassword] = useState('');
@@ -35,7 +34,7 @@ export function ResetPasswordForm() {
     setStatus('loading');
     
     try {
-      await api.post('/auth/reset-password', { token, password });
+      await api.post('/api/auth/reset-password', { token, password });
       setStatus('success');
     } catch (err: any) {
       setStatus('error');
@@ -53,7 +52,11 @@ export function ResetPasswordForm() {
           <h2 className="text-xl font-bold text-white">Password Updated</h2>
           <p className="text-gray-500 text-sm">Your password has been reset successfully. You can now log in with your new credentials.</p>
         </div>
-        <Link href="/auth/login" className="w-full py-3.5 bg-vault-green text-vault-darker font-bold rounded-xl flex items-center justify-center gap-2">
+        <Link href="/auth/login" style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          width: '100%', padding: '14px', background: '#00FF88', color: '#05050A',
+          borderRadius: '12px', fontWeight: 700, textDecoration: 'none'
+        }}>
           Proceed to Login
           <ArrowRight size={18} />
         </Link>
@@ -62,66 +65,40 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <div className="space-y-6">
       {!token && (
-        <p className="text-red-400 text-xs text-center font-medium bg-red-400/10 py-2 rounded-lg mb-4">
-          ⚠️ Missing reset token in URL. Please use the link sent to your email.
-        </p>
+        <AuthErrorBanner error="⚠️ Missing reset token in URL. Please use the link sent to your email." />
       )}
+      
+      <AuthErrorBanner error={status === 'error' ? message : null} />
 
-      {/* New Password */}
-      <div className="space-y-2">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">
-          New Password
-        </label>
-        <div className="relative group">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-vault-green transition-colors" size={18} />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="Min. 8 characters"
-            className="w-full bg-vault-dark/40 border border-vault-border/60 rounded-xl py-3 pl-11 pr-4 text-white
-                       placeholder-gray-700 outline-none focus:border-vault-green/50 focus:ring-4 focus:ring-vault-green/5 transition-all"
-          />
-        </div>
-      </div>
+      <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+        <AuthInputField
+          id="new-password"
+          type="password"
+          label="New Password"
+          placeholder="Min. 8 characters"
+          value={password}
+          onChange={setPassword}
+          icon={Lock}
+          required
+          autoComplete="new-password"
+        />
 
-      {/* Confirm Password */}
-      <div className="space-y-2">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">
-          Confirm New Password
-        </label>
-        <div className="relative group">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-vault-green transition-colors" size={18} />
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            placeholder="Re-type new password"
-            className="w-full bg-vault-dark/40 border border-vault-border/60 rounded-xl py-3 pl-11 pr-4 text-white
-                       placeholder-gray-700 outline-none focus:border-vault-green/50 focus:ring-4 focus:ring-vault-green/5 transition-all"
-          />
-        </div>
-      </div>
+        <AuthInputField
+          id="confirm-password"
+          type="password"
+          label="Confirm New Password"
+          placeholder="Re-type new password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          icon={Lock}
+          required
+          autoComplete="new-password"
+        />
 
-      <motion.button
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-        disabled={status === 'loading' || !token}
-        className="w-full py-3.5 bg-vault-green text-vault-darker font-bold rounded-xl mt-4 flex items-center justify-center gap-2
-                   shadow-[0_4px_20px_rgba(0,255,136,0.2)] disabled:opacity-50 transition-all"
-      >
-        {status === 'loading' ? 'Resetting...' : 'Reset Password'}
-      </motion.button>
-
-      {status === 'error' && (
-        <p className="text-red-400 text-xs text-center font-medium bg-red-400/10 py-2 rounded-lg">
-          {message}
-        </p>
-      )}
-    </form>
+        <AuthSubmitBtn loading={status === 'loading'} label="Reset Password" />
+      </form>
+    </div>
   );
 }

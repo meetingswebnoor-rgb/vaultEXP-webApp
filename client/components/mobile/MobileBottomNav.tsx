@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { MOBILE_NAV_TABS, type MobileNavTab } from '@/config/navigation';
 import { cn } from '@/lib/utils/cn';
+import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -218,22 +219,12 @@ function AIButton({ active, onPress }: AIButtonProps) {
           ? { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }
           : { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
         transition={{ duration: 0.3 }}
-        className="relative h-[50px] w-[50px] rounded-full flex items-center justify-center transition-colors"
+        className="relative h-[56px] w-[56px] rounded-full flex items-center justify-center transition-colors"
       >
-        {/* icon.png — clean animation */}
-        <motion.span
-          animate={active ? { scale: 1.15 } : { scale: 1 }}
-          transition={{ type: 'spring', damping: 10, stiffness: 120 }}
-          className="relative z-10 flex items-center justify-center"
-        >
-          <Image
-            src="/icon.png"
-            alt="VaultAI"
-            width={28}
-            height={28}
-            className="object-contain"
-          />
-        </motion.span>
+        {/* AI Orb */}
+        <div className="relative z-10 flex items-center justify-center">
+          <VaultAIOrb size={36} glow={active} animated={active} compact={true} />
+        </div>
       </motion.span>
 
       {/* Label beneath button */}

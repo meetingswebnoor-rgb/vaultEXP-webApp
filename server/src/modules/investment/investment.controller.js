@@ -9,6 +9,7 @@
 const investmentService = require('./investment.service');
 const catchAsync = require('../../utils/catchAsync');
 const ApiResponse = require('../../utils/apiResponse');
+const { generateInvestmentIntelligence } = require('../../ai/index');
 
 exports.createInvestment = catchAsync(async (req, res) => {
   const investment = await investmentService.create(req.user.id, req.body);
@@ -17,7 +18,16 @@ exports.createInvestment = catchAsync(async (req, res) => {
 
 exports.listInvestments = catchAsync(async (req, res) => {
   const investments = await investmentService.list(req.user.id, req.query);
-  res.status(200).json(new ApiResponse(200, { investments, count: investments.length }, 'Investments retrieved successfully'));
+  const analytics = await investmentService.getAnalytics(req.user.id);
+  
+  res.status(200).json(new ApiResponse(200, { 
+    investments, 
+    count: investments.length,
+    summary: {
+      totalValue: analytics.totalCurrentValue,
+      totalProfitLoss: analytics.totalProfit
+    }
+  }, 'Investments retrieved successfully'));
 });
 
 exports.getInvestment = catchAsync(async (req, res) => {
@@ -38,4 +48,12 @@ exports.deleteInvestment = catchAsync(async (req, res) => {
 exports.getAnalytics = catchAsync(async (req, res) => {
   const analytics = await investmentService.getAnalytics(req.user.id);
   res.status(200).json(new ApiResponse(200, analytics, 'Investment analytics retrieved successfully'));
+});
+
+exports.getAIIntelligence = catchAsync(async (req, res) => {
+  const result = await generateInvestmentIntelligence(req.user.id);
+  if (result.error) {
+    return res.status(500).json(new ApiResponse(500, result, 'Failed to generate investment intelligence'));
+  }
+  res.status(200).json(new ApiResponse(200, result, 'Investment AI intelligence generated successfully'));
 });

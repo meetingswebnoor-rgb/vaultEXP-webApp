@@ -25,7 +25,7 @@ interface NeonLineChartProps {
 }
 
 export function NeonLineChart({
-  data,
+  data = [],
   color = '#00FF88', // vault-green default
   height = 300,
   showGrid = true,

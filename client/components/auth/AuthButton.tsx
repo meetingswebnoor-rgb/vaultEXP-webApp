@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/cn';
 
 interface AuthButtonProps {
   children: ReactNode;

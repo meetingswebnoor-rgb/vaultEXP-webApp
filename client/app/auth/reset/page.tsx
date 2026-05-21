@@ -1,45 +1,28 @@
 'use client';
 
-import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { AuthLayout as MobileAuthLayout } from '@/components/mobile/auth/AuthLayout';
-import { DesktopAuthLayout } from '@/components/desktop/auth/DesktopAuthLayout';
-import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
 import { Suspense } from 'react';
+import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
+import { UnifiedAuthLayout } from '@/components/auth/UnifiedAuthLayout';
 
 function ResetPasswordContent() {
-  const { isDesktop, isReady } = useBreakpoint();
-
-  if (!isReady) return <div className="min-h-screen bg-vault-darker" />;
-
   const title = "New Password";
   const subtitle = "Secure your vault with a fresh credential";
 
-  if (isDesktop) {
-    return (
-      <DesktopAuthLayout title={title} subtitle={subtitle}>
-        <ResetPasswordForm />
-      </DesktopAuthLayout>
-    );
-  }
-
   return (
-    <MobileAuthLayout>
-      <div className="space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-display font-bold text-white tracking-tight">{title}</h1>
-          <p className="text-gray-500 mt-2 text-sm">{subtitle}</p>
-        </div>
-        <div className="glass-card-mobile p-6">
-          <ResetPasswordForm />
-        </div>
+    <UnifiedAuthLayout mode="reset">
+      <div className="auth-heading-desktop">
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: 'Outfit, Inter, sans-serif', margin: '0 0 4px' }}>{title}</h1>
+        <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>{subtitle}</p>
       </div>
-    </MobileAuthLayout>
+      
+      <ResetPasswordForm />
+    </UnifiedAuthLayout>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-vault-darker" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#05050A]" />}>
       <ResetPasswordContent />
     </Suspense>
   );

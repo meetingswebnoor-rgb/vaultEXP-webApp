@@ -9,6 +9,7 @@ import { AddInvestmentModal } from '@/components/investment/AddInvestmentModal';
 import { InvestmentReportModal } from '@/components/investment/InvestmentReportModal';
 import { InvestmentListCard } from '@/components/mobile/investment/InvestmentListCard';
 import { DesktopInvestmentLayout } from '@/components/desktop/investment/DesktopInvestmentLayout';
+import { AIInvestmentIntelligence } from '@/components/investment/AIInvestmentIntelligence';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { Loader2, Plus, AlertCircle, TrendingUp, DollarSign, Activity, PieChart as PieChartIcon, FileBarChart } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -26,10 +27,14 @@ interface Investment {
 }
 
 interface InvestmentResponse {
-  data: Investment[];
-  summary: {
-    totalValue: number;
-    totalProfitLoss: number;
+  success: boolean;
+  data: {
+    investments: Investment[];
+    count: number;
+    summary?: {
+      totalValue: number;
+      totalProfitLoss: number;
+    };
   };
 }
 
@@ -47,8 +52,8 @@ export default function InvestmentPage() {
     retry: 1,
   });
 
-  const investments = data?.data ?? [];
-  const summary = data?.summary ?? { totalValue: 0, totalProfitLoss: 0 };
+  const investments = Array.isArray(data?.data?.investments) ? data.data.investments : [];
+  const summary = data?.data?.summary ?? { totalValue: 0, totalProfitLoss: 0 };
   const hasInvestments = investments.length > 0;
   const isPositive = summary.totalProfitLoss >= 0;
   
@@ -146,6 +151,11 @@ export default function InvestmentPage() {
           <span className="text-gray-500 text-xs">All Time Return</span>
         </div>
       </motion.div>
+
+      {/* AI Investment Intelligence */}
+      <div className="mb-6">
+        <AIInvestmentIntelligence />
+      </div>
 
       {/* 3. Chart Section */}
       <motion.div

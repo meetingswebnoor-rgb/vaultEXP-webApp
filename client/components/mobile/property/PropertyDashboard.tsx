@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { ExpenseModal } from '@/components/property/ExpenseModal';
 import { DocumentModal } from '@/components/property/DocumentModal';
+import { AIPropertyAdvisor } from '@/components/property/AIPropertyAdvisor';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -69,7 +70,7 @@ interface PropertyDetail {
   };
 }
 
-type Tab = 'tenants' | 'expenses' | 'documents';
+type Tab = 'tenants' | 'expenses' | 'documents' | 'ai-insights';
 
 // ── Sub-components ───────────────────────────────────────────────
 
@@ -373,11 +374,12 @@ export function PropertyDashboard({
       {/* ── TAB BAR ──────────────────────────────────────────────── */}
       <div className="px-4 mb-4">
         <div className="flex bg-white/[0.03] rounded-2xl p-1 border border-white/[0.06] gap-1">
-          {(['tenants', 'expenses', 'documents'] as Tab[]).map((tab) => {
+          {(['tenants', 'expenses', 'documents', 'ai-insights'] as Tab[]).map((tab) => {
             const counts: Record<Tab, number> = {
               tenants:   property.tenants.length,
               expenses:  property.expenses.length,
               documents: property.documents.length,
+              'ai-insights': 0,
             };
             const isActive = activeTab === tab;
             return (
@@ -395,7 +397,7 @@ export function PropertyDashboard({
                   />
                 )}
                 <span className="relative z-10 flex items-center justify-center gap-1.5">
-                  {tab}
+                  {tab === 'ai-insights' ? 'AI Advisor' : tab}
                   {counts[tab] > 0 && (
                     <span
                       className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
@@ -463,6 +465,18 @@ export function PropertyDashboard({
               ) : (
                 property.documents.map(d => <DocumentRow key={d._id} doc={d} />)
               )}
+            </motion.div>
+          )}
+
+          {activeTab === 'ai-insights' && (
+            <motion.div
+              key="ai-insights"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
+            >
+              <AIPropertyAdvisor propertyId={property._id} propertyName={property.name} />
             </motion.div>
           )}
         </AnimatePresence>

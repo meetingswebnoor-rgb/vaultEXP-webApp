@@ -13,32 +13,13 @@
 
 const bcrypt         = require('bcryptjs');
 const prisma         = require('../../lib/prisma');
-const { AppError }   = require('../../utils/appError');
+const { UserService } = require('../user/user.service');
 const { signAccessToken } = require('../../utils/tokenUtils');
+const { AppError } = require('../../utils/appError');
 
 const BCRYPT_ROUNDS = 12;
 
-// ── Helpers ────────────────────────────────────────────────────
-
-/**
- * Strip sensitive fields before sending user to client.
- */
-function safeUser(user) {
-  return {
-    id:          user.id,
-    name:        user.name,
-    email:       user.email,
-    avatar:      user.avatar,
-    role:        user.role,
-    status:      user.status,
-    isVerified:  user.isVerified,
-    timezone:    user.timezone,
-    currency:    user.currency,
-    settings:    user.settings,
-    createdAt:   user.createdAt,
-    lastLoginAt: user.lastLoginAt,
-  };
-}
+// safeUser helper removed — now handled centrally by UserService.safeUser (internal) or similar logic.
 
 // ── Signup ─────────────────────────────────────────────────────
 
@@ -69,16 +50,19 @@ async function signup({ name, email, password }) {
       email:        normalizedEmail,
       passwordHash,
       authProvider: 'local',
-      role:         'user',
+      role:         'USER',
       status:       'active',
       isVerified:   false,
+      isApproved:   true,
+      isActive:     true,
+      clearanceLevel: 1
     },
   });
 
   // 4. Issue JWT
-  const accessToken = signAccessToken(user.id, user.role);
+  const accessToken = signAccessToken(user.id, user.role, user.email, user.isApproved, user.clearanceLevel, user.isActive);
 
-  return { user: safeUser(user), accessToken };
+  return { user: await UserService.getById(user.id), accessToken };
 }
 
 // ── Login ──────────────────────────────────────────────────────
@@ -158,9 +142,9 @@ async function login({ email, password }) {
   });
 
   // 6. Issue JWT
-  const accessToken = signAccessToken(user.id, user.role);
+  const accessToken = signAccessToken(user.id, user.role, user.email, user.isApproved, user.clearanceLevel, user.isActive);
 
-  return { user: safeUser(user), accessToken };
+  return { user: await UserService.getById(user.id), accessToken };
 }
 
 // ── Get Current User ───────────────────────────────────────────
@@ -172,19 +156,7 @@ async function login({ email, password }) {
  * @returns {object} safeUser
  */
 async function getMe(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user || user.deletedAt) {
-    throw new AppError('User not found.', 404, 'USER_NOT_FOUND');
-  }
-
-  if (user.status === 'suspended') {
-    throw new AppError('Account suspended.', 403, 'ACCOUNT_SUSPENDED');
-  }
-
-  return safeUser(user);
+  return await UserService.getById(userId);
 }
 
 module.exports = { signup, login, getMe };

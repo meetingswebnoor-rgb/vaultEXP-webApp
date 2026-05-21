@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from '@/components/providers/Providers';
 import { QuickActionModal } from '@/components/ui/QuickActionModal';
+import { AIAssistant } from '@/components/ai/AIAssistant';
 
 export const metadata: Metadata = {
   title: {
@@ -47,8 +48,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans bg-vault-dark text-white antialiased" suppressHydrationWarning>
-        <Providers>{children}</Providers>
-        <QuickActionModal />
+        <Providers>
+          {children}
+          <QuickActionModal />
+          <AIAssistant />
+        </Providers>
       </body>
     </html>
   );

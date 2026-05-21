@@ -6,7 +6,7 @@ const dashboardService = require('./dashboard.service');
  */
 const getDashboardData = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const data = await dashboardService.getDashboardData(userId);
     
     return res.status(200).json({

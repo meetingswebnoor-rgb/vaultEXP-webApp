@@ -8,6 +8,7 @@
 
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../../utils/appError');
+const eventBus = require('../../lib/eventBus');
 
 class InvestmentService {
 
@@ -36,6 +37,7 @@ class InvestmentService {
       },
     });
 
+    eventBus.emit('portfolio.updated', { userId, investmentId: investment.id });
 
     return investment;
   }
@@ -97,6 +99,7 @@ class InvestmentService {
       data: updateData,
     });
 
+    eventBus.emit('portfolio.updated', { userId, investmentId: investment.id });
 
     return investment;
   }

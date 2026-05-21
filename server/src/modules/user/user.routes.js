@@ -18,8 +18,8 @@ router.patch('/change-password', UserController.changePassword);
 router.delete('/account', UserController.deleteAccount);
 
 // Admin only
-router.get('/', authorize('admin'), UserController.listUsers);
-router.get('/:id', authorize('admin', 'manager'), UserController.getUserById);
-router.patch('/:id/status', authorize('admin'), UserController.updateUserStatus);
+router.get('/', authorize('ADMIN'), UserController.listUsers);
+router.get('/:id', authorize('ADMIN', 'manager'), UserController.getUserById);
+router.patch('/:id/status', authorize('ADMIN'), UserController.updateUserStatus);
 
 module.exports = router;

@@ -7,6 +7,7 @@ import { Plus, Download, TrendingUp, TrendingDown, DollarSign, Activity, PieChar
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 import { calculateInvestmentPerformance, generateGrowthData, generateDistributionData } from '@/lib/utils/investment';
 import { InvestmentReportModal } from '@/components/investment/InvestmentReportModal';
+import { AIInvestmentIntelligence } from '@/components/investment/AIInvestmentIntelligence';
 
 interface Investment {
   _id: string;
@@ -73,6 +74,11 @@ export function DesktopInvestmentLayout({ investments, summary, onAdd }: Desktop
         </div>
       </div>
 
+      {/* ── AI Investment Intelligence Engine ── */}
+      <div className="mb-8">
+        <AIInvestmentIntelligence />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* ── LEFT COLUMN: Holdings Table (8 cols) ── */}
         <div className="lg:col-span-7 space-y-6">
@@ -96,7 +102,7 @@ export function DesktopInvestmentLayout({ investments, summary, onAdd }: Desktop
                   </tr>
                 </thead>
                 <tbody>
-                  {investments.map((inv) => {
+                  {(Array.isArray(investments) ? investments : []).map((inv) => {
                     const { profitLoss, percentage, isPositive } = calculateInvestmentPerformance(inv.currentValue || 0, inv.amountInvested || 0);
                     return (
                       <tr

@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, ArrowUpRight, Zap, Shield, AlertTriangle } from 'lucide-react';
+import { TrendingUp, ArrowUpRight, Zap, Shield, AlertTriangle } from 'lucide-react';
+import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
 
 const INSIGHTS = [
   {
@@ -49,9 +50,9 @@ export function InsightsCard() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-vault-border/40">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-xl bg-vault-green/10 border border-vault-green/20
+          <div className="h-9 w-9 rounded-xl bg-vault-green/10 border border-vault-green/20
                           flex items-center justify-center">
-            <Sparkles size={15} className="text-vault-green" />
+            <VaultAIOrb size={22} glow={true} animated={true} compact={true} />
           </div>
           <div>
             <p className="text-sm font-semibold text-white">AI Insights</p>
@@ -116,10 +117,10 @@ export function InsightsCard() {
 
       {/* CTA */}
       <div className="px-6 pb-5">
-        <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
+        <button className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl
                            bg-vault-green/10 border border-vault-green/20 text-vault-green
-                           text-[13px] font-semibold hover:bg-vault-green/15 transition-all group">
-          <Sparkles size={13} />
+                           text-[13px] font-bold hover:bg-vault-green/15 transition-all group shadow-[0_0_15px_rgba(0,255,136,0.05)]">
+          <VaultAIOrb size={18} glow={true} compact={true} />
           Full AI Report
           <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
         </button>

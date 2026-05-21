@@ -1,34 +1,18 @@
 /**
  * dashboard.service.js
  * ─────────────────────────────────────────────────────────────────
- * Mongoose / MongoDB aggregation pipeline REMOVED.
- * Pending MySQL migration.
- *
- * TODO: Replace stub with JOINed MySQL queries (or separate queries
- *       combined in JS) to aggregate dashboard data for a user.
- *
- * MySQL tables used:
- *   users, businesses, properties, investments, wallets,
- *   wallet_transactions, expenses, invoices
+ * Dashboard service — Prisma + MySQL implementation.
+ * Aggregates summary data from multiple modules for the dashboard.
  */
-const cache = require('../../utils/cache');
 
-// ── DB Stub ────────────────────────────────────────────────────
-const db = {
-  users: { findById: async (id) => null },
-  businesses: { find: async (f) => [] },
-  properties: { find: async (f) => [] },
-  investments: { find: async (f) => [] },
-  wallets: { find: async (f) => [] },
-  expenses: { find: async (f) => [] },
-  invoices: { find: async (f) => [] },
-};
+'use strict';
+
+const prisma = require('../../lib/prisma');
+const cache  = require('../../utils/cache');
 
 class DashboardService {
   /**
    * Fetches and aggregates all dashboard data for a user.
-   * TODO: Replace individual stubs with a single optimized MySQL JOIN query
-   *       or parallel Promise.all() with real DB queries.
    *
    * @param {string} userId
    * @returns {Promise<Object>}
@@ -39,25 +23,60 @@ class DashboardService {
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
 
-    // TODO: Replace all stubs below with real MySQL queries
-    const [user, businesses, wallets, recentExpenses, recentInvoices] = await Promise.all([
-      // SELECT id, name, email, avatar, settings, last_login_at FROM users WHERE id = ?
-      db.users.findById(userId),
-      // SELECT * FROM businesses WHERE owner_id = ? ORDER BY created_at DESC LIMIT 10
-      db.businesses.find({ ownerId: userId }),
-      // SELECT * FROM wallets WHERE user_id = ?
-      db.wallets.find({ userId }),
-      // SELECT * FROM expenses WHERE user_id = ? ORDER BY date DESC LIMIT 10
-      db.expenses.find({ userId }),
-      // SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC LIMIT 10
-      db.invoices.find({ userId }),
+    // 1. Fetch all relevant data in parallel
+    const [
+      user,
+      businesses,
+      properties,
+      investments,
+      wallets,
+      recentExpenses,
+      recentInvoices
+    ] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.business.findMany({ where: { ownerId: userId, deletedAt: null } }),
+      prisma.property.findMany({ where: { ownerId: userId, deletedAt: null } }),
+      prisma.investment.findMany({ where: { userId, deletedAt: null } }),
+      prisma.wallet.findMany({ where: { userId, deletedAt: null } }),
+      prisma.expense.findMany({ 
+        where: { userId, deletedAt: null },
+        orderBy: { date: 'desc' },
+        take: 5 
+      }),
+      prisma.invoice.findMany({ 
+        where: { userId, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        take: 5 
+      })
     ]);
 
+    // 2. Aggregate Stats
     const totalWalletBalance = wallets.reduce((sum, w) => sum + (w.balance || 0), 0);
-    const totalExpenses      = recentExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const totalInvoiced      = recentInvoices.reduce((sum, i) => sum + (i.amount || 0), 0);
-    const paidInvoices       = recentInvoices.filter(i => i.status === 'paid');
-    const overdueInvoices    = recentInvoices.filter(i => i.status === 'overdue');
+    const totalInvestmentValue = investments.reduce((sum, i) => sum + (i.currentValue || 0), 0);
+    const totalPropertyValuation = properties.reduce((sum, p) => sum + (p.valuation || 0), 0);
+    const totalBusinessValuation = businesses.reduce((sum, b) => sum + (b.valuation || 0), 0);
+
+    const totalNetWorth = totalWalletBalance + totalInvestmentValue + totalPropertyValuation + totalBusinessValuation;
+
+    // 3. Build Recent Activity (Combine Expenses & Invoices)
+    const recentActivity = [
+      ...recentExpenses.map(e => ({
+        id: e.id,
+        type: 'expense',
+        label: e.description || 'Expense',
+        business: e.category || 'General',
+        amount: -(e.amount || 0),
+        date: e.date,
+      })),
+      ...recentInvoices.map(i => ({
+        id: i.id,
+        type: 'invoice',
+        label: `Invoice #${i.invoiceNumber}`,
+        business: i.clientName || 'Client',
+        amount: i.amount || 0,
+        date: i.createdAt,
+      }))
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
     const result = {
       user: user ? {
@@ -70,35 +89,38 @@ class DashboardService {
         lastLoginAt: user.lastLoginAt,
       } : null,
       stats: {
-        totalNetWorth:        totalWalletBalance,
-        totalExpenses,
-        totalInvoiced,
+        totalNetWorth,
+        totalWalletBalance,
+        totalInvestmentValue,
         businessCount:        businesses.length,
+        propertyCount:        properties.length,
+        investmentCount:      investments.length,
         walletCount:          wallets.length,
-        paidInvoiceCount:     paidInvoices.length,
-        overdueInvoiceCount:  overdueInvoices.length,
+        overdueInvoiceCount:  recentInvoices.filter(i => i.status === 'overdue').length,
       },
-      businesses: businesses.map(b => ({
+      businesses: businesses.slice(0, 5).map(b => ({
         id:         b.id,
         name:       b.name,
         type:       b.type,
-        industry:   b.industry,
         status:     b.status,
         valuation:  b.valuation || 0,
       })),
-      recentActivity: [],
-      notifications: [
-        overdueInvoices.length > 0 && {
-          id:      'overdue-invoices',
-          type:    'warning',
-          title:   'Overdue Invoices',
-          message: `You have ${overdueInvoices.length} overdue invoice(s) that need attention.`,
-          time:    'now',
-        },
-      ].filter(Boolean),
+      recentActivity,
+      notifications: [],
     };
 
-    cache.set(cacheKey, result, 300);
+    // Add notifications based on logic
+    if (result.stats.overdueInvoiceCount > 0) {
+      result.notifications.push({
+        id:      'overdue-invoices',
+        type:    'warning',
+        title:   'Overdue Invoices',
+        message: `You have ${result.stats.overdueInvoiceCount} overdue invoice(s).`,
+        time:    'now',
+      });
+    }
+
+    cache.set(cacheKey, result, 300); // 5 min cache
     return result;
   }
 }

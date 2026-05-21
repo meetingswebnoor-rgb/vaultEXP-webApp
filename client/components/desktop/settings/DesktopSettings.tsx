@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -115,7 +116,14 @@ export function DesktopSettings() {
                       <div className="relative group">
                         <div className="w-24 h-24 rounded-2xl bg-vault-dark border border-white/10 flex items-center justify-center overflow-hidden">
                           {user?.avatarUrl ? (
-                            <img src={user.avatarUrl} className="w-full h-full object-cover" />
+                            <div className="relative w-full h-full">
+                              <Image 
+                                src={user.avatarUrl} 
+                                alt={user.name || 'Avatar'} 
+                                fill
+                                className="object-cover" 
+                              />
+                            </div>
                           ) : (
                             <User size={32} className="text-gray-600" />
                           )}

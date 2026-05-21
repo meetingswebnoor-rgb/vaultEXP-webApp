@@ -5,15 +5,16 @@
  * across all devices while adapting to different input methods (touch vs mouse).
  */
 
-export const EASING = [0.22, 1, 0.36, 1]; // Premium snappy cubic-bezier
+export const EASING = [0.22, 1, 0.36, 1]; // Premium snappy cubic-bezier (Quart)
+export const EASE_OUT = [0.25, 0.46, 0.45, 0.94]; // Fast ease out
 export const SPRING = { type: 'spring', damping: 28, stiffness: 300 };
 export const SPRING_BOUNCY = { type: 'spring', damping: 15, stiffness: 350 };
 
 export const TRANSITIONS = {
-  default: { duration: 0.3, ease: EASING },
-  fast:    { duration: 0.2, ease: EASING },
-  slow:    { duration: 0.5, ease: EASING },
-  layout:  { type: 'spring', damping: 25, stiffness: 200 },
+  default: { duration: 0.25, ease: EASING },
+  fast:    { duration: 0.18, ease: EASING },
+  slow:    { duration: 0.4, ease: EASING },
+  layout:  { type: 'spring', damping: 30, stiffness: 300, mass: 0.8 },
 };
 
 export const VARIANTS = {

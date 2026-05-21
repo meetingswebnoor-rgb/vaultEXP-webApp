@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { secureStorage } from '../secureStorage';
 
 /**
  * API Client for VaultEXP
@@ -25,10 +26,10 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     try {
-      const raw = localStorage.getItem('vaultexp-auth');
+      const raw = secureStorage.getItem('vault-auth-storage');
       if (raw) {
         const parsed = JSON.parse(raw);
-        const token = parsed?.state?.accessToken;
+        const token = parsed?.state?.token;
         
         if (token) {
           // Use .set() if available (Axios 1.0+), otherwise direct assignment
@@ -38,6 +39,16 @@ api.interceptors.request.use((config) => {
             config.headers = config.headers ?? {};
             (config.headers as any)['Authorization'] = `Bearer ${token}`;
           }
+        }
+      }
+      
+      const workspaceId = localStorage.getItem('vault-workspace-id');
+      if (workspaceId) {
+        if (config.headers && typeof config.headers.set === 'function') {
+          config.headers.set('x-workspace-id', workspaceId);
+        } else {
+          config.headers = config.headers ?? {};
+          (config.headers as any)['x-workspace-id'] = workspaceId;
         }
       }
     } catch (err) {
@@ -76,9 +87,24 @@ function injectLegacyId(obj: any) {
   }
 }
 
-api.interceptors.response.use((response) => {
-  if (response.data) {
-    injectLegacyId(response.data);
+api.interceptors.response.use(
+  (response) => {
+    if (response.data) {
+      injectLegacyId(response.data);
+    }
+    return response;
+  },
+  (error) => {
+    // If we get a 401 and we're on the client, clear auth and redirect
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      const isAuthPage = window.location.pathname.startsWith('/auth');
+      
+      if (!isAuthPage) {
+        console.warn('[API] 401 Unauthorized - clearing session');
+        secureStorage.removeItem('vault-auth-storage');
+        window.location.href = `/auth/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+      }
+    }
+    return Promise.reject(error);
   }
-  return response;
-});
+);

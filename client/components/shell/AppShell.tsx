@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { AppShellProvider } from './AppShellContext';
 import { AppShellInner } from './AppShellInner';
 import type { ReactNode } from 'react';
+import { api } from '@/lib/api';
 
 interface AppShellProps {
   children: ReactNode;
@@ -24,9 +25,26 @@ interface AppShellProps {
  *  ```
  */
 export function AppShell({ children }: AppShellProps) {
+  const [wsBrandConfig, setWsBrandConfig] = useState<any>(null);
+
+  useEffect(() => {
+    // In a real implementation, fetch based on active workspace ID.
+    setWsBrandConfig({
+      primaryColor: '#00FF88', // Default vault-green
+      sidebarColor: '#0A0F14'  // Default dark glass
+    });
+  }, []);
+
+  const styleObj = {
+    '--ws-primary': wsBrandConfig?.primaryColor || '#00FF88',
+    '--ws-sidebar': wsBrandConfig?.sidebarColor || '#0A0F14',
+  } as React.CSSProperties;
+
   return (
-    <AppShellProvider>
-      <AppShellInner>{children}</AppShellInner>
-    </AppShellProvider>
+    <div style={styleObj} className="contents">
+      <AppShellProvider>
+        <AppShellInner>{children}</AppShellInner>
+      </AppShellProvider>
+    </div>
   );
 }

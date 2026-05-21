@@ -53,7 +53,7 @@ export function InvestmentReportModal({ isOpen, onClose, investments, summary }:
   );
 
   // Group assets by type for breakdown
-  const breakdown = investments.reduce<Record<string, { count: number; totalValue: number; totalInvested: number }>>((acc, inv) => {
+  const breakdown = (Array.isArray(investments) ? investments : []).reduce<Record<string, { count: number; totalValue: number; totalInvested: number }>>((acc, inv) => {
     const t = inv.type || 'manual_asset';
     if (!acc[t]) acc[t] = { count: 0, totalValue: 0, totalInvested: 0 };
     acc[t].count += 1;
@@ -237,7 +237,7 @@ export function InvestmentReportModal({ isOpen, onClose, investments, summary }:
                 </tr>
               </thead>
               <tbody>
-                {investments.map((inv, i) => {
+                {(Array.isArray(investments) ? investments : []).map((inv, i) => {
                   const { profitLoss, percentage, isPositive } = calculateInvestmentPerformance(
                     inv.currentValue || 0,
                     inv.amountInvested || 0

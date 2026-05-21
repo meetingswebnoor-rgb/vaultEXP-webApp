@@ -15,6 +15,7 @@ const { protect } = require('../../middleware/auth.middleware');
 router.use(protect);
 
 router.get('/analytics', controller.getAnalytics);
+router.get('/ai-intelligence', controller.getAIIntelligence);
 
 router.post('/create', controller.createInvestment);
 router.get('/', controller.listInvestments);

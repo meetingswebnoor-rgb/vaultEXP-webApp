@@ -1,9 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { DesktopSidebar } from '@/components/desktop/DesktopSidebar';
+
+import { Sidebar } from '@/components/dashboard/sidebar/Sidebar';
 import { DesktopTopbar } from '@/components/desktop/DesktopTopbar';
 import { useAppShell } from '@/components/shell/AppShellContext';
+import { VaultAISidebar } from '@/components/ai/VaultAISidebar';
+import { FloatingAIOrb } from '@/components/ai/FloatingAIOrb';
 
 interface DesktopDashboardProps {
   children: React.ReactNode;
@@ -17,8 +20,12 @@ export function DesktopDashboard({ children }: DesktopDashboardProps) {
 
   return (
     <div className="flex h-screen bg-vault-darker overflow-hidden text-white">
+      {/* Global AI Assistant */}
+      <VaultAISidebar />
+      <FloatingAIOrb />
+
       {/* ── Sidebar ─────────────────────────────────────────── */}
-      <DesktopSidebar 
+      <Sidebar 
         collapsed={sidebarCollapsed} 
         onToggle={toggleSidebar} 
       />
@@ -41,7 +48,7 @@ export function DesktopDashboard({ children }: DesktopDashboardProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="h-full"
+            className="min-h-full flex flex-col"
           >
             {children}
           </motion.div>

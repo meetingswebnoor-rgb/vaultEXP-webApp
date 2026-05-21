@@ -1,114 +1,182 @@
 /**
  * user.service.js
  * ─────────────────────────────────────────────────────────────────
- * Mongoose / MongoDB REMOVED — pending MySQL migration.
- *
- * TODO: Replace stub implementations with mysql2/promise queries.
- *
- * MySQL table: users
- *   id, name, email, avatar, role, is_verified, status,
- *   settings (JSON), password_hash, last_login_at, deleted_at,
- *   created_at, updated_at
+ * User service — Prisma + MySQL implementation.
+ * Handles: profile retrieval, settings updates, user listing.
  */
+
+'use strict';
+
 const bcrypt = require('bcryptjs');
+const prisma = require('../../lib/prisma');
 const { AppError } = require('../../utils/appError');
 
-// ── DB Stub ────────────────────────────────────────────────────
-const db = {
-  users: {
-    findById: async (id) => null,
-    update: async (id, data) => ({ id, ...data }),
-    find: async (filter) => [],
-    count: async (filter) => 0,
-    toSafeObject: (user) => ({
-      id: user.id, name: user.name, email: user.email,
-      avatar: user.avatar, role: user.role, isVerified: user.isVerified,
-      status: user.status, settings: user.settings,
-      createdAt: user.createdAt, lastLoginAt: user.lastLoginAt,
-    }),
-  },
-};
+/**
+ * Strip sensitive fields before sending user to client.
+ */
+function safeUser(user) {
+  if (!user) return null;
+  return {
+    id:          user.id,
+    name:        user.name,
+    email:       user.email,
+    avatar:      user.avatar,
+    role:        user.role,
+    status:      user.status,
+    isVerified:  user.isVerified,
+    timezone:    user.timezone,
+    currency:    user.currency,
+    settings:    user.settings,
+    isApproved:  user.isApproved,
+    isActive:    user.isActive,
+    clearanceLevel: user.clearanceLevel,
+    createdAt:   user.createdAt,
+    lastLoginAt: user.lastLoginAt,
+  };
+}
 
 class UserServiceClass {
+  /**
+   * Fetch a single user by ID.
+   */
   async getById(id) {
-    // TODO: SELECT * FROM users WHERE id = ? AND deleted_at IS NULL
-    const user = await db.users.findById(id);
-    if (!user) throw new AppError('User not found', 404);
-    return db.users.toSafeObject(user);
+    const user = await prisma.user.findUnique({
+      where: { id, deletedAt: null },
+    });
+    if (!user) throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    return safeUser(user);
   }
 
+  /**
+   * Fetch profile for the current user.
+   */
   async getProfile(id) {
-    const user = await db.users.findById(id);
-    if (!user) throw new AppError('User not found', 404);
-    const safe = db.users.toSafeObject(user);
-    return { name: safe.name, email: safe.email, avatar: safe.avatar, settings: safe.settings };
-  }
-
-  async updateProfile(id, { name, avatar }) {
-    const update = {};
-    if (name) update.name = name;
-    if (avatar) update.avatar = avatar;
-    // TODO: UPDATE users SET name = ?, avatar = ? WHERE id = ?
-    const user = await db.users.update(id, update);
-    if (!user) throw new AppError('User not found', 404);
-    return db.users.toSafeObject(user);
-  }
-
-  async updateSettings(id, { theme, layoutPreference, notifications }) {
-    const update = {};
-    if (theme) update['settings.theme'] = theme;
-    if (layoutPreference) update['settings.layoutPreference'] = layoutPreference;
-    if (notifications) {
-      if (typeof notifications.email === 'boolean') update['settings.notifications.email'] = notifications.email;
-      if (typeof notifications.push === 'boolean') update['settings.notifications.push'] = notifications.push;
-    }
-    // TODO: UPDATE users SET settings = JSON_MERGE_PATCH(settings, ?) WHERE id = ?
-    const user = await db.users.update(id, update);
-    if (!user) throw new AppError('User not found', 404);
-    return db.users.toSafeObject(user);
-  }
-
-  async changePassword(id, { currentPassword, newPassword }) {
-    // TODO: SELECT password_hash FROM users WHERE id = ?
-    const user = await db.users.findById(id);
-    if (!user) throw new AppError('User not found', 404);
-
-    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash || '');
-    if (!isMatch) throw new AppError('Current password is incorrect', 400);
-
-    const passwordHash = await bcrypt.hash(newPassword, 12);
-    // TODO: UPDATE users SET password_hash = ? WHERE id = ?
-    await db.users.update(id, { passwordHash });
-  }
-
-  async deleteAccount(id) {
-    // TODO: UPDATE users SET status = 'inactive', deleted_at = NOW() WHERE id = ?
-    await db.users.update(id, { status: 'inactive', deletedAt: new Date() });
-  }
-
-  async list({ page = 1, limit = 20, search, status, role } = {}) {
-    // TODO: SELECT * FROM users WHERE … LIMIT ? OFFSET ?
-    const [data, total] = await Promise.all([
-      db.users.find({ search, status, role }),
-      db.users.count({ search, status, role }),
-    ]);
-    const skip = (Number(page) - 1) * Number(limit);
+    const user = await this.getById(id);
     return {
-      data: data.map(db.users.toSafeObject),
+      name:     user.name,
+      email:    user.email,
+      avatar:   user.avatar,
+      settings: user.settings,
+      role:     user.role,
+    };
+  }
+
+  /**
+   * Update user name or avatar.
+   */
+  async updateProfile(id, { name, avatar }) {
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(name && { name: name.trim() }),
+        ...(avatar && { avatar }),
+      },
+    });
+    return safeUser(user);
+  }
+
+  /**
+   * Update user settings (theme, notifications, etc.).
+   */
+  async updateSettings(id, settings) {
+    // Note: Prisma 5+ handles JSON merge/patch natively in some cases,
+    // but for simple settings we just overwrite the settings object or merge it.
+    const currentUser = await prisma.user.findUnique({ where: { id }, select: { settings: true } });
+    
+    const newSettings = {
+      ...(currentUser.settings || {}),
+      ...settings
+    };
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { settings: newSettings },
+    });
+    return safeUser(user);
+  }
+
+  /**
+   * Change user password.
+   */
+  async changePassword(id, { currentPassword, newPassword }) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { passwordHash: true },
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new AppError('Password change not allowed for social login accounts.', 400);
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) throw new AppError('Current password is incorrect.', 401, 'INVALID_PASSWORD');
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id },
+      data: { passwordHash: newHash },
+    });
+  }
+
+  /**
+   * Soft delete account.
+   */
+  async deleteAccount(id) {
+    await prisma.user.update({
+      where: { id },
+      data: {
+        status: 'inactive',
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * List users with pagination and filters.
+   */
+  async list({ page = 1, limit = 20, search, status, role } = {}) {
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
+
+    const where = {
+      deletedAt: null,
+      ...(status && { status }),
+      ...(role && { role }),
+      ...(search && {
+        OR: [
+          { name: { contains: search } },
+          { email: { contains: search } },
+        ],
+      }),
+    };
+
+    const [data, total] = await Promise.all([
+      prisma.user.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
+      prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: data.map(safeUser),
       meta: {
-        page: Number(page), limit: Number(limit), total,
-        totalPages: Math.ceil(total / Number(limit)),
+        page: Number(page),
+        limit: take,
+        total,
+        totalPages: Math.ceil(total / take),
         hasNext: skip + data.length < total,
         hasPrev: Number(page) > 1,
       },
     };
   }
 
+  /**
+   * Update user status (active/suspended/etc.).
+   */
   async updateStatus(id, status) {
-    // TODO: UPDATE users SET status = ? WHERE id = ?
-    const user = await db.users.update(id, { status });
-    if (!user) throw new AppError('User not found', 404);
-    return db.users.toSafeObject(user);
+    const user = await prisma.user.update({
+      where: { id },
+      data: { status },
+    });
+    return safeUser(user);
   }
 }
 

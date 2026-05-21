@@ -13,8 +13,15 @@ interface Toast {
   type: ToastType;
 }
 
+interface AddToastOptions {
+  title?: string;
+  message: string;
+  type?: ToastType;
+}
+
 interface ToastContextType {
   showToast: (message: string, type?: ToastType) => void;
+  addToast: (options: AddToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -30,8 +37,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }, 3000);
   }, []);
 
+  const addToast = useCallback(({ title, message, type = 'success' }: AddToastOptions) => {
+    const fullMessage = title ? `${title}: ${message}` : message;
+    showToast(fullMessage, type);
+  }, [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast, addToast }}>
       {children}
       {/* Toast Container */}
       <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none">
@@ -78,3 +90,5 @@ export const useToast = () => {
   if (!context) throw new Error('useToast must be used within a ToastProvider');
   return context;
 };
+
+

@@ -9,6 +9,7 @@
 const propertyService = require('./property.service');
 const catchAsync      = require('../../utils/catchAsync');
 const ApiResponse     = require('../../utils/apiResponse');
+const { generatePropertyAdvice } = require('../../ai/index');
 
 // ── POST /api/property/create ─────────────────────────────────
 exports.createProperty = catchAsync(async (req, res) => {
@@ -57,4 +58,13 @@ exports.getAnalytics = catchAsync(async (req, res) => {
 exports.getStats = catchAsync(async (req, res) => {
   const stats = await propertyService.getStats(req.user.id);
   res.status(200).json(new ApiResponse(200, stats, 'Property stats retrieved'));
+});
+
+// ── GET /api/property/:id/ai-advice ───────────────────────────
+exports.getAIAdvice = catchAsync(async (req, res) => {
+  const result = await generatePropertyAdvice(req.user.id, req.params.id);
+  if (result.error) {
+    return res.status(500).json(new ApiResponse(500, result, 'Failed to generate AI advice'));
+  }
+  res.status(200).json(new ApiResponse(200, result, 'AI property advice generated successfully'));
 });

@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { AutoRedirect } from '@/components/guards/AutoRedirect';
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-vault-dark flex flex-col items-center justify-center px-4">
+      <AutoRedirect />
       {/* Hero */}
       <section className="text-center max-w-4xl mx-auto py-24">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-vault-green/30 bg-vault-green/10 px-4 py-1.5 text-sm text-vault-green">
@@ -29,7 +31,7 @@ export default function HomePage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/auth/register" className="btn-primary text-lg px-8 py-4">
+          <Link href="/auth/signup" className="btn-primary text-lg px-8 py-4">
             Get Started Free
           </Link>
           <Link href="/auth/login" className="btn-secondary text-lg px-8 py-4">

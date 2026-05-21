@@ -21,12 +21,12 @@ const getJwtExpiry = () => process.env.JWT_EXPIRES_IN || '7d';
  * @param {string} role
  * @returns {string} Signed JWT
  */
-function signAccessToken(userId, role) {
+function signAccessToken(userId, role, email, isApproved, clearanceLevel, isActive, workspaceAccess = []) {
   const secret = getJwtSecret();
   if (!secret) throw new AppError('JWT_SECRET is not configured', 500, 'CONFIG_ERROR');
   
   return jwt.sign(
-    { id: userId, role, type: 'access' },
+    { id: userId, role, email, isApproved, clearanceLevel, isActive, workspaceAccess, type: 'access' },
     secret,
     { expiresIn: getJwtExpiry() }
   );

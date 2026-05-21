@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { PropertyDashboard } from '@/components/mobile/property/PropertyDashboard';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useActionStore } from '@/features/actions/actionStore';
+import { useActionStore } from '@/store/actionStore';
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();

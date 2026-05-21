@@ -8,9 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function SignupPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen" style={{ background: '#07070E' }} />}>
-      <AuthSignupForm />
-    </Suspense>
-  );
+  return <AuthSignupForm />;
 }

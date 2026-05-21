@@ -8,6 +8,7 @@
 
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../../utils/appError');
+const eventBus = require('../../lib/eventBus');
 
 class PropertyService {
 
@@ -40,6 +41,7 @@ class PropertyService {
       },
     });
 
+    eventBus.emit('property.added', { propertyId: property.id, userId, name: property.name });
 
     return property;
   }

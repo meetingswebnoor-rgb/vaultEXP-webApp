@@ -6,34 +6,57 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Settings2, Briefcase, Building2, TrendingUp, Landmark } from 'lucide-react';
 import { DEFAULT_LAYOUT } from '@/components/dashboard/DashboardCustomizer';
 import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils/cn';
 import { PageContainer } from '@/components/layouts/PageContainer';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { AIInsightsWidget } from '@/components/dashboard/AIInsightsWidget';
 
 // ── Mobile components ────────────────────────────────────────
 import { PortfolioCard } from '@/components/mobile/PortfolioCard';
 import { QuickActions } from '@/components/mobile/QuickActions';
 import { ModuleCards, RecentTransactions } from '@/components/mobile/ModuleCards';
 import { InvestmentSummaryStrip } from '@/components/mobile/InvestmentSummaryStrip';
+import { PullToRefresh } from '@/components/mobile/PullToRefresh';
+import { MobileQuickActionsFAB } from '@/components/mobile/MobileQuickActionsFAB';
 
-// ── Desktop components ────────────────────────────────────────
-import {
-  PortfolioOverview,
-  InsightsCard,
-  ModulePreviewCard,
-  ActivityTable,
-  AlertsCard,
-  QuickActionsCard
-} from '@/components/desktop/dashboard';
+// ── Desktop components (Lazy Loaded) ──────────────────────────
+const PortfolioOverview = dynamic(() => import('@/components/desktop/dashboard').then(m => m.PortfolioOverview), { ssr: false, loading: () => <div className="h-[300px] w-full rounded-2xl bg-white/5 animate-pulse" /> });
+const InsightsCard = dynamic(() => import('@/components/desktop/dashboard').then(m => m.InsightsCard), { ssr: false });
+const ModulePreviewCard = dynamic(() => import('@/components/desktop/dashboard').then(m => m.ModulePreviewCard), { ssr: false });
+const ActivityTable = dynamic(() => import('@/components/desktop/dashboard').then(m => m.ActivityTable), { ssr: false });
+const AlertsCard = dynamic(() => import('@/components/desktop/dashboard').then(m => m.AlertsCard), { ssr: false });
+const QuickActionsCard = dynamic(() => import('@/components/desktop/dashboard').then(m => m.QuickActionsCard), { ssr: false });
 
 const DashboardCustomizer = dynamic(
   () => import('@/components/dashboard/DashboardCustomizer').then(m => m.DashboardCustomizer),
   { ssr: false }
 );
+
+// ── Skeleton Loader ───────────────────────────────────────────
+function DashboardSkeleton() {
+  return (
+    <PageContainer className="space-y-6">
+      <div className="flex items-center justify-between mb-8">
+        <div className="space-y-2">
+          <div className="h-8 w-64 bg-white/5 rounded-xl animate-pulse" />
+          <div className="h-4 w-48 bg-white/5 rounded-lg animate-pulse" />
+        </div>
+        <div className="h-10 w-32 bg-white/5 rounded-xl animate-pulse" />
+      </div>
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-8 h-[300px] bg-white/5 rounded-2xl animate-pulse" />
+        <div className="col-span-4 h-[300px] bg-white/5 rounded-2xl animate-pulse" />
+        <div className="col-span-12 grid grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => <div key={i} className="h-48 bg-white/5 rounded-2xl animate-pulse" />)}
+        </div>
+      </div>
+    </PageContainer>
+  );
+}
 
 // Static data for modules that don't yet have a live API source
 const STATIC_MODULES_DATA = [
@@ -80,6 +103,12 @@ export default function DashboardPage() {
   const { isMobile, isTablet } = useBreakpoint();
   const { user, token } = useAuthStore();
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    await queryClient.invalidateQueries({ queryKey: ['investments'] });
+  };
 
   // ── Live Investment Data ──────────────────────────────────────
   const { data: investmentData } = useQuery({
@@ -123,24 +152,24 @@ export default function DashboardPage() {
   const sortedLayout = [...currentLayout].sort((a, b) => a.order - b.order);
 
   // ── Build MODULES_DATA — merge static entries with live investment data ──
-  const investments = investmentData?.data ?? [];
-  const invSummary  = investmentData?.summary ?? { totalValue: 0, totalProfitLoss: 0 };
+  const investments = Array.isArray(investmentData?.data?.investments) ? investmentData.data.investments : [];
+  const invSummary  = investmentData?.data?.summary || { totalValue: 0, totalProfitLoss: 0 };
   const fmt = (v: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
 
   const investmentModule = {
     title: 'Investments',
-    count: String(investments.length),
-    value: fmt(invSummary.totalValue),
-    delta: `${invSummary.totalProfitLoss >= 0 ? '+' : ''}${fmt(Math.abs(invSummary.totalProfitLoss))}`,
-    up: invSummary.totalProfitLoss >= 0,
+    count: String(investments?.length || 0),
+    value: fmt(invSummary?.totalValue || 0),
+    delta: `${(invSummary?.totalProfitLoss || 0) >= 0 ? '+' : ''}${fmt(Math.abs(invSummary?.totalProfitLoss || 0))}`,
+    up: (invSummary?.totalProfitLoss || 0) >= 0,
     icon: TrendingUp,
     color: 'purple' as const,
     route: '/investment',
     items: investments.slice(0, 3).map((inv: any) => ({
-      label: inv.name,
+      label: inv.name || 'Unnamed Asset',
       value: fmt(inv.currentValue || 0),
-      sub: inv.type?.replace('_', ' ') ?? '',
+      sub: inv.type?.replace('_', ' ') ?? 'Asset',
     })),
   };
 
@@ -162,11 +191,7 @@ export default function DashboardPage() {
   const MODULES_DATA = [...STATIC_MODULES_DATA, investmentModule, walletModule];
 
   if (loading || !token) {
-    return (
-      <PageContainer className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-2 border-vault-green border-t-transparent rounded-full" />
-      </PageContainer>
-    );
+    return <DashboardSkeleton />;
   }
 
   const renderSection = (id: string) => {
@@ -181,7 +206,7 @@ export default function DashboardPage() {
           : <div className="col-span-12 xl:col-span-4"><InsightsCard /></div>;
       case 'quickActions':
         return (isMobile || isTablet)
-          ? <QuickActions />
+          ? null // Replaced by FAB
           : <div className="col-span-12 lg:col-span-4"><QuickActionsCard /></div>;
       case 'modules':
         return (isMobile || isTablet)
@@ -212,11 +237,26 @@ export default function DashboardPage() {
   };
 
   return (
-    <PageContainer noPadding={(isMobile || isTablet)} className="relative">
+    <PageContainer noPadding={(isMobile || isTablet)} className="relative h-full overflow-hidden">
       <AnimatePresence>
         {isCustomizing && <DashboardCustomizer onClose={() => setIsCustomizing(false)} />}
       </AnimatePresence>
 
+      {(isMobile || isTablet) && <MobileQuickActionsFAB />}
+
+      {/* Wrapping the entire content in PullToRefresh for mobile */}
+      {isMobile || isTablet ? (
+        <PullToRefresh onRefresh={handleRefresh}>
+          <DashboardContent />
+        </PullToRefresh>
+      ) : (
+        <DashboardContent />
+      )}
+    </PageContainer>
+  );
+
+  function DashboardContent() {
+    return (
       <div className="space-y-6">
         <div className={cn(
           (isMobile || isTablet) ? 'flex justify-end px-5 mt-4' : 'block'
@@ -245,6 +285,11 @@ export default function DashboardPage() {
             </button>
           )}
         </div>
+        
+        {/* Daily AI Insights Panel */}
+        <div className="col-span-12">
+          <AIInsightsWidget />
+        </div>
 
         <div className={cn(
           'grid grid-cols-12 gap-6',
@@ -271,6 +316,6 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
-    </PageContainer>
-  );
+    );
+  }
 }

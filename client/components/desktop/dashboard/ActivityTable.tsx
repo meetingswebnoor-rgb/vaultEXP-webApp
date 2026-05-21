@@ -23,13 +23,18 @@ export function ActivityTable({ data = [] }: ActivityTableProps) {
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
 
   const getTimeAgo = (date: string) => {
-    const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+    if (!date) return 'Unknown time';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'Invalid date';
+    
+    const seconds = Math.floor((new Date().getTime() - d.getTime()) / 1000);
+    if (seconds < 0) return 'Just now'; // Future date? Just show now
     if (seconds < 60) return 'Just now';
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
-    return new Date(date).toLocaleDateString();
+    return d.toLocaleDateString();
   };
   return (
     <div className="rounded-2xl border border-vault-border/60 bg-vault-card/40 flex flex-col h-full overflow-hidden">
@@ -67,11 +72,11 @@ export function ActivityTable({ data = [] }: ActivityTableProps) {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-vault-dark border border-vault-border flex items-center justify-center text-[10px] font-bold text-gray-400">
-                      {act.business[0]}
+                      {(act.business && typeof act.business === 'string') ? act.business[0] : '?'}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-white truncate">{act.business}</p>
-                      <p className="text-[11px] text-gray-600 truncate">{act.label}</p>
+                      <p className="text-[13px] font-medium text-white truncate">{act.business || 'General'}</p>
+                      <p className="text-[11px] text-gray-600 truncate">{act.label || act.description || 'System Activity'}</p>
                     </div>
                   </div>
                 </td>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { documentApi, Document } from '../api/documentApi';
 import { UploadCloud, File, FileText, Search, BrainCircuit, Loader2, Trash2, Shield, Download, ChevronRight } from 'lucide-react';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/components/ui/Toast';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Files' },

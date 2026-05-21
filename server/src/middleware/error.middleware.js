@@ -31,6 +31,20 @@ function errorHandler(err, _req, res, _next) {
     errorCode = 'FOREIGN_KEY_FAILED';
   }
 
+  // Prisma connection error
+  if (err.code?.startsWith('P1')) {
+    statusCode = 503;
+    message = 'Database connection failed';
+    errorCode = 'DB_CONNECTION_ERROR';
+  }
+
+  // Prisma schema / table missing
+  if (err.code === 'P2021' || err.code === 'P2022') {
+    statusCode = 500;
+    message = 'Database schema out of sync';
+    errorCode = 'SCHEMA_MISMATCH';
+  }
+
   // Log server errors
   if (statusCode >= 500) {
     logger.error(err);

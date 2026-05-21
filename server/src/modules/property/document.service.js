@@ -8,6 +8,7 @@
 
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../../utils/appError');
+const eventBus = require('../../lib/eventBus');
 
 class DocumentService {
   async _assertPropertyOwner(propertyId, userId) {
@@ -45,6 +46,7 @@ class DocumentService {
       },
     });
 
+    eventBus.emit('document.uploaded', { documentId: doc.id, propertyId, userId, category: doc.category, fileType: doc.type });
 
     return doc;
   }

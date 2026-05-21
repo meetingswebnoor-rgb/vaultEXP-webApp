@@ -26,7 +26,7 @@ const COLOR_MAP = {
 };
 
 export const ModulePreviewCard = memo(({
-  title, count, value, delta, up, icon: Icon, color, route, items
+  title, count, value, delta, up, icon: Icon, color, route, items = []
 }: ModulePreviewCardProps) => {
   const router = useRouter();
 

@@ -8,6 +8,7 @@
 
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../../utils/appError');
+const eventBus = require('../../lib/eventBus');
 
 class ExpenseService {
   async _assertPropertyOwner(propertyId, userId) {
@@ -43,6 +44,7 @@ class ExpenseService {
       },
     });
 
+    eventBus.emit('expense.created', { expenseId: expense.id, propertyId, userId, amount: expense.amount });
 
     return expense;
   }

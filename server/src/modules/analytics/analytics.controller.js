@@ -11,8 +11,8 @@
  *   SELECT SUM(amount) FROM expenses WHERE business_id = ?
  *   SELECT MONTH(paid_at), YEAR(paid_at), SUM(amount) FROM invoices … GROUP BY …
  */
-const asyncHandler = require('../../utils/catchAsync');
-const { sendSuccess } = require('../../utils/apiResponse');
+const catchAsync = require('../../utils/catchAsync');
+const ApiResponse = require('../../utils/apiResponse');
 const { AppError } = require('../../utils/appError');
 
 // ── DB Stub ────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ exports.getBusinessAnalytics = catchAsync(async (req, res, next) => {
     });
   }
 
-  sendSuccess(res, 200, 'Analytics retrieved', {
+  res.status(200).json(new ApiResponse(200, {
     summary: {
       totalRevenue,
       totalExpenses,
@@ -82,5 +82,5 @@ exports.getBusinessAnalytics = catchAsync(async (req, res, next) => {
       margin: totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(2) : 0,
     },
     chartData,
-  });
+  }, 'Analytics retrieved'));
 });

@@ -22,7 +22,7 @@ import {
   FileText,
   Loader2
 } from 'lucide-react';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils/cn';
 
 export function MessagingSystem() {

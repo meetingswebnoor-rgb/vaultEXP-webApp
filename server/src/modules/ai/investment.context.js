@@ -97,10 +97,14 @@ function buildTimeline(investments) {
     }));
 }
 
-// ── DB Stub ────────────────────────────────────────────────────
-// TODO: Replace with mysql2/promise: SELECT * FROM investments WHERE user_id = ? ORDER BY purchase_date ASC
+// ── DB Query using Prisma ─────────────────────────────────────────
+const prisma = require('../../lib/prisma');
+
 async function fetchInvestments(userId) {
-  return [];
+  return await prisma.investment.findMany({
+    where: { userId },
+    orderBy: { purchaseDate: 'asc' }
+  });
 }
 
 async function getInvestmentContext(userId) {

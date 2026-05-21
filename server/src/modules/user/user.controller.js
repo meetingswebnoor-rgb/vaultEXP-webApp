@@ -2,7 +2,7 @@
  * User Controller
  */
 const { UserService } = require('./user.service');
-const { asyncHandler } = require('../../utils/catchAsync');
+const catchAsync = require('../../utils/catchAsync');
 const { ApiResponse } = require('../../utils/apiResponse');
 
 class UserControllerClass {

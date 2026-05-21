@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-
 interface PageHeaderProps {
   title: string;
   description?: string;
@@ -14,7 +13,13 @@ interface PageHeaderProps {
  * Standardized Page Header
  * Ensures consistent typography and spacing for page titles across all modules.
  */
-export function PageHeader({ title, description, actions, className, showBack }: PageHeaderProps) {
+export function PageHeader({ 
+  title, 
+  description, 
+  actions, 
+  className, 
+  showBack
+}: PageHeaderProps) {
   return (
     <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6", className)}>
       <div className="flex items-center gap-4">

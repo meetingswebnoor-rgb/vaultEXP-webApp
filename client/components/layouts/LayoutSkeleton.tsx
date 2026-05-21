@@ -2,34 +2,129 @@
 
 /**
  * LayoutSkeleton
- * Rendered server-side and during hydration before useBreakpoint resolves.
+ * Rendered during SSR / first hydration tick before useBreakpoint resolves.
  * Prevents layout flash and hydration mismatch.
- * Uses neutral structure that matches neither mobile nor desktop.
+ *
+ * Uses inline styles as a guaranteed fallback so it renders dark correctly
+ * even before Tailwind CSS variables have fully mounted.
  */
 export function LayoutSkeleton() {
   return (
-    <div className="flex h-screen bg-vault-darker animate-pulse">
-      {/* Sidebar placeholder (hidden on mobile via CSS) */}
-      <div className="hidden lg:block w-60 h-full bg-vault-dark border-r border-vault-border flex-shrink-0" />
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        width: '100%',
+        backgroundColor: '#05050A',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Sidebar placeholder — only visible on desktop */}
+      <div
+        className="hidden lg:block"
+        style={{
+          width: '260px',
+          height: '100%',
+          backgroundColor: '#0A0F14',
+          borderRight: '1px solid rgba(255,255,255,0.04)',
+          flexShrink: 0,
+        }}
+      />
 
-      <div className="flex-1 flex flex-col">
-        {/* Header bar */}
-        <div className="h-14 lg:h-16 border-b border-vault-border bg-vault-dark flex-shrink-0" />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Topbar skeleton */}
+        <div
+          style={{
+            height: '64px',
+            borderBottom: '1px solid rgba(255,255,255,0.04)',
+            backgroundColor: '#0A0F14',
+            flexShrink: 0,
+          }}
+        />
 
         {/* Content skeleton */}
-        <div className="flex-1 p-6 space-y-4">
-          <div className="h-8 w-48 rounded-xl bg-vault-card" />
-          <div className="h-4 w-72 rounded-lg bg-vault-card" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-2xl bg-vault-card border border-vault-border" />
+        <div
+          style={{
+            flex: 1,
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
+          {/* Title bar */}
+          <div
+            style={{
+              height: '28px',
+              width: '180px',
+              borderRadius: '10px',
+              backgroundColor: '#111118',
+              animation: 'skeleton-pulse 1.5s ease-in-out infinite',
+            }}
+          />
+          <div
+            style={{
+              height: '14px',
+              width: '280px',
+              borderRadius: '8px',
+              backgroundColor: '#111118',
+              animation: 'skeleton-pulse 1.5s ease-in-out infinite 0.1s',
+            }}
+          />
+
+          {/* Card grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gap: '16px',
+              marginTop: '8px',
+            }}
+          >
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  height: '120px',
+                  borderRadius: '20px',
+                  backgroundColor: '#111118',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                  animation: `skeleton-pulse 1.5s ease-in-out infinite ${i * 0.12}s`,
+                }}
+              />
             ))}
           </div>
+
+          {/* Wide card */}
+          <div
+            style={{
+              height: '200px',
+              borderRadius: '20px',
+              backgroundColor: '#111118',
+              border: '1px solid rgba(255,255,255,0.04)',
+              animation: 'skeleton-pulse 1.5s ease-in-out infinite 0.3s',
+            }}
+          />
         </div>
 
-        {/* Bottom bar (shown only on mobile-ish sizes) */}
-        <div className="lg:hidden h-16 border-t border-vault-border bg-vault-dark flex-shrink-0" />
+        {/* Mobile bottom bar */}
+        <div
+          className="lg:hidden"
+          style={{
+            height: '64px',
+            borderTop: '1px solid rgba(255,255,255,0.04)',
+            backgroundColor: '#0A0F14',
+            flexShrink: 0,
+          }}
+        />
       </div>
+
+      <style>{`
+        @keyframes skeleton-pulse {
+          0%, 100% { opacity: 0.5; }
+          50%       { opacity: 0.9; }
+        }
+      `}</style>
     </div>
   );
 }

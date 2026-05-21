@@ -3,11 +3,11 @@
 import { PageContainer } from '@/components/layouts/PageContainer';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ModuleCard } from '@/components/ui/ModuleCard';
-import useAuth from '@/src/store/useAuth';
+import { useAuthStore } from '@/store/authStore';
 import { LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore();
 
   return (
     <PageContainer>

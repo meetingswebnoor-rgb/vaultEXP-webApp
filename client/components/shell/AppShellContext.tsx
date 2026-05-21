@@ -20,6 +20,8 @@ interface AppShellState {
   fabOpen: boolean;
   /** Desktop/mobile notifications panel open state */
   notificationsOpen: boolean;
+  /** Global AI assistant sidebar open state */
+  aiSidebarOpen: boolean;
 }
 
 interface AppShellActions {
@@ -34,6 +36,9 @@ interface AppShellActions {
   openNotifications: () => void;
   closeNotifications: () => void;
   toggleNotifications: () => void;
+  openAISidebar: () => void;
+  closeAISidebar: () => void;
+  toggleAISidebar: () => void;
   /** Dismiss all popovers at once (useful on route change) */
   closeAll: () => void;
 }
@@ -60,11 +65,13 @@ export function AppShellProvider({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
 
   const closeAll = useCallback(() => {
     setDrawerOpen(false);
     setFabOpen(false);
     setNotificationsOpen(false);
+    setAiSidebarOpen(false);
   }, []);
 
   const value = useMemo<AppShellContextValue>(
@@ -74,6 +81,7 @@ export function AppShellProvider({
       drawerOpen,
       fabOpen,
       notificationsOpen,
+      aiSidebarOpen,
       // Sidebar
       setSidebarCollapsed,
       toggleSidebar: () => setSidebarCollapsed((v) => !v),
@@ -89,10 +97,14 @@ export function AppShellProvider({
       openNotifications:  () => setNotificationsOpen(true),
       closeNotifications: () => setNotificationsOpen(false),
       toggleNotifications: () => setNotificationsOpen((v) => !v),
+      // AI Sidebar
+      openAISidebar:  () => setAiSidebarOpen(true),
+      closeAISidebar: () => setAiSidebarOpen(false),
+      toggleAISidebar: () => setAiSidebarOpen((v) => !v),
       // Global
       closeAll,
     }),
-    [sidebarCollapsed, drawerOpen, fabOpen, notificationsOpen, closeAll]
+    [sidebarCollapsed, drawerOpen, fabOpen, notificationsOpen, aiSidebarOpen, closeAll]
   );
 
   return (

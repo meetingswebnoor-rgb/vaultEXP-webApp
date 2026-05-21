@@ -7,6 +7,7 @@ import {
   Vault, ArrowUpRight, FileText, Calendar, PieChart, Landmark, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
 
 // ── Data ──────────────────────────────────────────────────────
 const MODULES = [
@@ -48,6 +49,7 @@ export function ModuleCards() {
       >
         {MODULES.map((mod) => {
           const Icon = mod.icon;
+          const isAI = mod.id === 'ai' || mod.id === 'tax';
 
           return (
             <motion.button
@@ -71,7 +73,11 @@ export function ModuleCards() {
                   border: `1px solid ${mod.color.replace('1)', '0.2)')}` 
                 }}
               >
-                <Icon size={24} style={{ color: mod.color }} strokeWidth={1.5} />
+                {isAI ? (
+                  <VaultAIOrb size={28} glow={true} animated={mod.id === 'ai'} />
+                ) : (
+                  <Icon size={24} style={{ color: mod.color }} strokeWidth={1.5} />
+                )}
               </div>
 
               {/* Label */}
@@ -127,39 +133,48 @@ export function RecentTransactions({ data = [] }: RecentTransactionsProps) {
         </button>
       </div>
 
-      <div className="space-y-2">
-        {data.map((act, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 + i * 0.06 }}
-            className="flex items-center gap-3 rounded-2xl px-4 py-3.5
-                       bg-vault-card border border-vault-border"
-          >
-            {/* Icon */}
-            <div className={cn(
-              'h-8 w-8 rounded-xl flex-shrink-0 flex items-center justify-center',
-              act.amount > 0 ? 'bg-vault-green/10' : 'bg-red-500/10'
-            )}>
-              {act.amount > 0 
-                ? <ArrowUpRight size={14} className="text-vault-green" /> 
-                : <TrendingDown size={14} className="text-red-400" />
-              }
+      <div className="space-y-2 overflow-hidden">
+        {(Array.isArray(data) ? data : []).map((act, i) => (
+          <div key={i} className="relative rounded-2xl bg-white/5 border border-vault-border">
+            {/* Background Actions (Revealed on Swipe) */}
+            <div className="absolute inset-0 flex items-center justify-end px-4 rounded-2xl bg-red-500/20 text-red-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Hide</span>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-medium text-white truncate">{act.label}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">{getTimeAgo(act.date)}</p>
-            </div>
+            {/* Swipeable Foreground */}
+            <motion.div
+              drag="x"
+              dragConstraints={{ left: -80, right: 0 }}
+              dragElastic={0.1}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + i * 0.06 }}
+              className="relative z-10 flex items-center gap-3 rounded-2xl px-4 py-3.5 bg-vault-card border border-vault-border"
+            >
+              {/* Icon */}
+              <div className={cn(
+                'h-8 w-8 rounded-xl flex-shrink-0 flex items-center justify-center',
+                Number(act.amount) > 0 ? 'bg-vault-green/10' : 'bg-red-500/10'
+              )}>
+                {Number(act.amount) > 0 
+                  ? <ArrowUpRight size={14} className="text-vault-green" /> 
+                  : <TrendingDown size={14} className="text-red-400" />
+                }
+              </div>
 
-            <span className={cn(
-              'text-[12px] font-bold flex-shrink-0',
-              act.amount > 0 ? 'text-vault-green' : 'text-red-400'
-            )}>
-              {act.amount > 0 ? '+' : ''}{fmt(act.amount)}
-            </span>
-          </motion.div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-medium text-white truncate">{act.label || 'Transaction'}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{getTimeAgo(act.date)}</p>
+              </div>
+
+              <span className={cn(
+                'text-[12px] font-bold flex-shrink-0',
+                Number(act.amount) > 0 ? 'text-vault-green' : 'text-red-400'
+              )}>
+                {Number(act.amount) > 0 ? '+' : ''}{fmt(act.amount || 0)}
+              </span>
+            </motion.div>
+          </div>
         ))}
         {data.length === 0 && (
           <div className="py-8 text-center text-xs text-gray-600 italic">No activity yet.</div>

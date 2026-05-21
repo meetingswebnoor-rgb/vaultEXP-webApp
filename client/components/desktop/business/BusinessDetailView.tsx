@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, TrendingDown, DollarSign, 
-  Receipt, FileText, UploadCloud, ChevronRight 
+  Receipt, FileText, UploadCloud, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { AIBusinessAdvisor } from '@/components/business/AIBusinessAdvisor';
 
 interface BusinessDetailViewProps {
   business: any;
@@ -14,8 +16,11 @@ interface BusinessDetailViewProps {
 
 export function BusinessDetailView({ business }: BusinessDetailViewProps) {
   const [activeTab, setActiveTab] = useState('expenses');
+  const router = useRouter();
 
   if (!business) return null;
+
+  const businessId = business.id || business._id;
 
   return (
     <div className="flex-1 overflow-y-auto bg-vault-dark/40">
@@ -31,8 +36,11 @@ export function BusinessDetailView({ business }: BusinessDetailViewProps) {
             <button className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all">
               Edit Details
             </button>
-            <button className="px-5 py-2.5 rounded-xl bg-vault-green text-black text-sm font-bold shadow-lg shadow-vault-green/20 hover:bg-vault-green-hover transition-all">
-              Generate Report
+            <button
+              onClick={() => setActiveTab('ai-advisor')}
+              className="px-5 py-2.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-500/30 text-white text-sm font-bold shadow-lg shadow-indigo-500/10 transition-all flex items-center gap-2"
+            >
+              <Sparkles size={15} /> AI Advisor
             </button>
           </div>
         </div>
@@ -46,23 +54,25 @@ export function BusinessDetailView({ business }: BusinessDetailViewProps) {
 
         {/* Action Bar */}
         <div className="flex items-center gap-4 mb-8">
-           <ActionButton label="Add Expense" icon={Receipt} color="orange" />
-           <ActionButton label="Create Invoice" icon={FileText} color="blue" />
-           <ActionButton label="Upload Document" icon={UploadCloud} color="purple" />
+           <ActionButton label="Add Expense" icon={Receipt} color="orange" onClick={() => router.push('/wallet')} />
+           <ActionButton label="Create Invoice" icon={FileText} color="blue" onClick={() => router.push('/business')} />
+           <ActionButton label="Upload Document" icon={UploadCloud} color="purple" onClick={() => router.push('/documents')} />
+           <ActionButton label="AI Insights" icon={Sparkles} color="indigo" onClick={() => setActiveTab('ai-advisor')} />
         </div>
 
         {/* Tabs System */}
         <div className="border-b border-vault-border/40 mb-8 flex gap-8">
-          {['expenses', 'invoices', 'documents'].map(tab => (
+          {['expenses', 'invoices', 'documents', 'ai-advisor'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "pb-4 text-sm font-bold uppercase tracking-widest transition-all relative",
+                "pb-4 text-sm font-bold uppercase tracking-widest transition-all relative flex items-center gap-1.5",
                 activeTab === tab ? "text-vault-green" : "text-gray-500 hover:text-gray-300"
               )}
             >
-              {tab}
+              {tab === 'ai-advisor' && <Sparkles size={12} />}
+              {tab.replace('-', ' ')}
               {activeTab === tab && (
                 <motion.div 
                   layoutId="activeTab" 
@@ -82,9 +92,12 @@ export function BusinessDetailView({ business }: BusinessDetailViewProps) {
             exit={{ opacity: 0, y: -10 }}
             className="min-h-[400px]"
           >
-            {activeTab === 'expenses' && <ExpenseTable />}
-            {activeTab === 'invoices' && <InvoiceGrid />}
-            {activeTab === 'documents' && <DocumentGrid />}
+            {activeTab === 'expenses'   && <ExpenseTable />}
+            {activeTab === 'invoices'   && <InvoiceGrid />}
+            {activeTab === 'documents'  && <DocumentGrid />}
+            {activeTab === 'ai-advisor' && businessId && (
+              <AIBusinessAdvisor businessId={businessId} businessName={business.name} />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -118,18 +131,22 @@ function StatCard({ title, value, icon: Icon, color, delta }: any) {
   );
 }
 
-function ActionButton({ label, icon: Icon, color }: any) {
+function ActionButton({ label, icon: Icon, color, onClick }: any) {
   const colors = {
     orange: 'hover:text-orange-400 hover:border-orange-500/40',
     blue:   'hover:text-blue-400 hover:border-blue-500/40',
-    purple: 'hover:text-purple-400 hover:border-purple-500/40'
+    purple: 'hover:text-purple-400 hover:border-purple-500/40',
+    indigo: 'hover:text-indigo-400 hover:border-indigo-500/40',
   };
   
   return (
-    <button className={cn(
-      "flex items-center gap-3 px-6 py-4 rounded-2xl bg-white/[0.03] border border-white/5 transition-all group",
-      colors[color as keyof typeof colors]
-    )}>
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 px-6 py-4 rounded-2xl bg-white/[0.03] border border-white/5 transition-all group",
+        colors[color as keyof typeof colors]
+      )}
+    >
       <Icon size={18} className="text-gray-500 group-hover:text-inherit" />
       <span className="text-sm font-bold text-gray-400 group-hover:text-white transition-colors">{label}</span>
     </button>

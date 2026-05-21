@@ -17,9 +17,11 @@ datasource db {
 // ─────────────────────────────────────────────────────────────
 
 enum UserRole {
-  user
-  admin
-  superadmin
+  SUPER_ADMIN
+  ADMIN
+  CLIENT
+  USER
+  TEAM_MEMBER
 }
 
 enum UserStatus {
@@ -233,13 +235,22 @@ model User {
   googleId     String?      @unique @map("google_id") @db.VarChar(128)
   authProvider AuthProvider @default(local) @map("auth_provider")
   avatar       String?      @db.VarChar(512)
-  role         UserRole     @default(user)
+  role         UserRole     @default(USER)
   status       UserStatus   @default(active)
   isVerified   Boolean      @default(false) @map("is_verified")
+
+  // Enterprise RBAC & Approvals
+  isApproved     Boolean   @default(false) @map("is_approved")
+  isActive       Boolean   @default(true) @map("is_active")
+  approvedById   String?   @map("approved_by_id")
+  approvedAt     DateTime? @map("approved_at")
+  clearanceLevel Int       @default(1) @map("clearance_level")
 
   // User preferences
   timezone String? @db.VarChar(50)
   currency String  @default("USD") @db.VarChar(3)
+
+  stripeCustomerId String? @unique @map("stripe_customer_id") @db.VarChar(100)
 
   // JSON blobs — structured when stable enough for own table
   settings  Json? // UI prefs, dashboard layout, theme
@@ -261,17 +272,64 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  businesses   Business[]
-  properties   Property[]
-  investments  Investment[]
-  wallets      Wallet[]
-  documents    Document[]
-  alerts       Alert[]
-  vaults       Vault[]
-  vaultMembers VaultMember[]
-  expenses     Expense[]
-  invoices     Invoice[]
-  rents        RentRecord[]
+  businesses      Business[]
+  properties      Property[]
+  investments     Investment[]
+  wallets         Wallet[]
+  documents       Document[]
+  alerts          Alert[]
+  vaults          Vault[]
+  vaultMembers    VaultMember[]
+  expenses        Expense[]
+  invoices        Invoice[]
+  rents           RentRecord[]
+  documentFolders DocumentFolder[]
+  comments        Comment[]
+  commentMentions CommentMention[]
+
+  // Team Collaboration Relations
+  ownedTeams       Team[]            @relation("TeamOwner")
+  teamMemberships  TeamMember[]
+  workspaceMembers WorkspaceMember[]
+  crmcontacts      CRMContact[]
+
+  // Client Portal
+  hostedClients          ClientPortalLink[] @relation("HostUser")
+  portalLinks            ClientPortalLink[] @relation("ClientUser")
+  portalMessagesSent     PortalMessage[]    @relation("SenderUser")
+  portalMessagesReceived PortalMessage[]    @relation("ReceiverUser")
+  clientInvoices         Invoice[]          @relation("ClientInvoices")
+
+  // Chat Relations
+  chatParticipants ChatParticipant[] @relation("UserChatParticipant")
+  chatMessages     ChatMessage[]     @relation("UserChatMessage")
+
+  // Project Relations
+  taskAssignments TaskAssignment[] @relation("UserTaskAssignment")
+  taskComments    TaskComment[]    @relation("UserTaskComment")
+
+  // Activity Tracking
+  activityLogs ActivityLog[]
+
+  // Calendar
+  calendarEvents CalendarEvent[] @relation("UserCalendarEvents")
+
+  // Notifications
+  notifications           Notification[]           @relation("UserNotifications")
+  pushTokens              PushToken[]              @relation("UserPushTokens")
+  notificationPreferences NotificationPreference[] @relation("UserNotificationPreferences")
+
+  // Security
+  securityLogs SecurityLog[] @relation("UserSecurityLogs")
+  
+  // Devices & Sessions
+  devices      Device[]      @relation("UserDevices")
+  sessions     Session[]     @relation("UserSessions")
+  syncDrafts   SyncDraft[]   @relation("UserSyncDrafts")
+
+  // Admin & Support
+  supportTickets SupportTicket[]
+  ticketMessages TicketMessage[]
 
   @@index([status, deletedAt])
   @@map("users")
@@ -299,8 +357,8 @@ model Business {
   taxId         String?        @map("tax_id") @db.VarChar(50)
 
   // Financial snapshot — refreshed by analytics jobs
-  totalRevenue  Decimal @default(0) @map("total_revenue") @db.Decimal(18, 2)
-  totalExpenses Decimal @default(0) @map("total_expenses") @db.Decimal(18, 2)
+  totalRevenue  Decimal  @default(0) @map("total_revenue") @db.Decimal(18, 2)
+  totalExpenses Decimal  @default(0) @map("total_expenses") @db.Decimal(18, 2)
   valuation     Decimal? @db.Decimal(18, 2)
 
   walletId String? @map("wallet_id")
@@ -308,11 +366,14 @@ model Business {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wallet    Wallet?   @relation(fields: [walletId], references: [id], onDelete: SetNull)
-  expenses  Expense[]
-  invoices  Invoice[]
-  documents Document[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet      Wallet?      @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  whiteLabel  WhiteLabelConfig?
+  expenses    Expense[]
+  invoices    Invoice[]
+  documents   Document[]
+  comments    Comment[]
+  crmcontacts CRMContact[]
 
   @@index([userId, status])
   @@index([userId, type])
@@ -354,12 +415,13 @@ model Property {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenants   Tenant[]
   expenses  Expense[]
   documents Document[]
   alerts    Alert[]
   rents     RentRecord[]
+  comments  Comment[]
 
   @@index([userId, status])
   @@index([userId, type])
@@ -437,22 +499,25 @@ model RentRecord {
 // ─────────────────────────────────────────────────────────────
 
 model Expense {
-  id               String          @id @default(cuid())
-  userId           String          @map("user_id")
-  businessId       String?         @map("business_id")
-  propertyId       String?         @map("property_id")
-  amount           Decimal         @db.Decimal(18, 2)
-  currency         String          @default("USD") @db.VarChar(3)
-  category         ExpenseCategory @default(other_business)
-  date             DateTime        @db.Date
-  description      String?         @db.VarChar(500)
-  vendor           String?         @db.VarChar(120)
-  paymentMethod    String?         @map("payment_method") @db.VarChar(50)
-  receiptUrl       String?         @map("receipt_url") @db.VarChar(512)
-  isRecurring      Boolean         @default(false) @map("is_recurring")
-  recurrenceRule   String?         @map("recurrence_rule") @db.VarChar(100)
-  isTaxDeductible  Boolean         @default(false) @map("is_tax_deductible")
-  taxCategory      String?         @map("tax_category") @db.VarChar(80)
+  id                String             @id @default(cuid())
+  userId            String             @map("user_id")
+  businessId        String?            @map("business_id")
+  propertyId        String?            @map("property_id")
+  categoryId        String?            @map("category_id")
+  category          String?            @db.VarChar(100) // Legacy
+  amount            Decimal            @db.Decimal(18, 2)
+  currency          String             @default("USD") @db.VarChar(3)
+  expenseCategory   ExpenseCategory    @default(other_business) // Legacy Enum
+  financialCategory FinancialCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  date              DateTime           @db.Date
+  description       String?            @db.VarChar(500)
+  vendor            String?            @db.VarChar(120)
+  paymentMethod     String?            @map("payment_method") @db.VarChar(50)
+  receiptUrl        String?            @map("receipt_url") @db.VarChar(512)
+  isRecurring       Boolean            @default(false) @map("is_recurring")
+  recurrenceRule    String?            @map("recurrence_rule") @db.VarChar(100)
+  isTaxDeductible   Boolean            @default(false) @map("is_tax_deductible")
+  taxCategory       String?            @map("tax_category") @db.VarChar(80)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -481,6 +546,7 @@ model Invoice {
   clientName     String        @map("client_name") @db.VarChar(200)
   clientEmail    String?       @map("client_email") @db.VarChar(255)
   clientAddress  String?       @map("client_address") @db.VarChar(500)
+  clientId       String?       @map("client_id")
   currency       String        @default("USD") @db.VarChar(3)
   subtotal       Decimal       @db.Decimal(18, 2)
   taxAmount      Decimal       @default(0) @map("tax_amount") @db.Decimal(18, 2)
@@ -490,15 +556,17 @@ model Invoice {
   issueDate      DateTime      @default(now()) @map("issue_date") @db.Date
   dueDate        DateTime?     @map("due_date") @db.Date
   paidAt         DateTime?     @map("paid_at")
-  items          Json // [{description, qty, unitPrice, amount}]
   notes          String?       @db.Text
   pdfUrl         String?       @map("pdf_url") @db.VarChar(512)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client   User?         @relation("ClientInvoices", fields: [clientId], references: [id], onDelete: SetNull)
+  business Business?     @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  items    InvoiceItem[]
+  payments Payment[]
 
   @@index([userId, status])
   @@index([userId, dueDate])
@@ -534,7 +602,8 @@ model Investment {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments Comment[]
 
   @@index([userId, type, status])
   @@index([userId, goalTag])
@@ -556,6 +625,9 @@ model Wallet {
   currency           String            @default("USD") @db.VarChar(3)
   balance            Decimal           @default(0) @db.Decimal(18, 2)
   isDefault          Boolean           @default(false) @map("is_default")
+  status             String            @default("ACTIVE") @db.VarChar(20)
+  routingNumber      String?           @map("routing_number") @db.VarChar(50)
+  swiftCode          String?           @map("swift_code") @db.VarChar(50)
   color              String?           @db.VarChar(10)
   icon               String?           @db.VarChar(50)
   linkedBusinessId   String?           @map("linked_business_id") @db.VarChar(36)
@@ -565,9 +637,10 @@ model Wallet {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  businesses   Business[]
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  businesses    Business[]
+  ledgerEntries LedgerEntry[]
 
   @@index([userId])
   @@index([userId, isDefault])
@@ -604,7 +677,9 @@ model Transaction {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  wallet        Wallet        @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  ledgerEntries LedgerEntry[]
+  payments      Payment[]
 
   @@index([walletId, date(sort: Desc)])
   @@index([userId, date(sort: Desc)])
@@ -615,45 +690,125 @@ model Transaction {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 9. DOCUMENT — unified across all contexts
+// 9. DOCUMENT VAULT (Folders, Files, Reminders, AI)
 // ─────────────────────────────────────────────────────────────
 
-model Document {
-  id            String          @id @default(cuid())
-  userId        String          @map("user_id")
-  context       DocumentContext @default(other)
-  businessId    String?         @map("business_id")
-  propertyId    String?         @map("property_id")
-  tenantId      String?         @map("tenant_id")
-  vaultId       String?         @map("vault_id")
-  name          String          @db.VarChar(200)
-  fileUrl       String          @map("file_url") @db.VarChar(1024)
-  thumbnailUrl  String?         @map("thumbnail_url") @db.VarChar(1024)
-  mimeType      String?         @map("mime_type") @db.VarChar(100)
-  sizeBytes     Int?            @map("size_bytes")
-  type          DocumentType    @default(other)
-  category      String?         @db.VarChar(80)
-  tags          Json?
-  isPrivate     Boolean         @default(true) @map("is_private")
-  aiSummary     String?         @map("ai_summary") @db.Text
-  aiKeywords    Json?           @map("ai_keywords")
-  expiresAt     DateTime?       @map("expires_at")
-  cloudPublicId String?         @map("cloud_public_id") @db.VarChar(255)
+model DocumentFolder {
+  id         String  @id @default(cuid())
+  userId     String  @map("user_id")
+  name       String  @db.VarChar(120)
+  parentId   String? @map("parent_id")
+  color      String? @db.VarChar(20)
+  isArchived Boolean @default(false) @map("is_archived")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  vault    Vault?    @relation(fields: [vaultId], references: [id], onDelete: SetNull)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    DocumentFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  DocumentFolder[] @relation("FolderHierarchy")
+  documents Document[]
 
-  @@index([userId, context])
+  workspaceId String?    @map("workspace_id")
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, parentId])
+  @@index([workspaceId])
+  @@map("document_folders")
+}
+
+model Document {
+  id          String  @id @default(cuid())
+  userId      String  @map("user_id")
+  businessId  String? @map("business_id")
+  propertyId  String? @map("property_id")
+  tenantId    String? @map("tenant_id")
+  vaultId     String? @map("vault_id")
+  folderId    String? @map("folder_id")
+  workspaceId String? @map("workspace_id")
+
+  originalName  String  @map("original_name") @db.VarChar(255)
+  storedName    String  @map("stored_name") @db.VarChar(255)
+  fileType      String  @map("file_type") @db.VarChar(50)
+  mimeType      String  @map("mime_type") @db.VarChar(100)
+  fileSize      Int     @map("file_size")
+  storagePath   String  @map("storage_path") @db.VarChar(1024)
+  thumbnailPath String? @map("thumbnail_path") @db.VarChar(1024)
+
+  aiSummary     String? @map("ai_summary") @db.Text
+  aiKeywords    Json?   @map("ai_keywords")
+  extractedText String? @map("extracted_text") @db.LongText
+  uploadSource  String  @default("web") @map("upload_source") @db.VarChar(50)
+  category      String? @db.VarChar(50)
+  isPrivate     Boolean @default(true) @map("is_private")
+
+  isEncrypted Boolean @default(false) @map("is_encrypted")
+  isArchived  Boolean @default(false) @map("is_archived")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business  Business?       @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  property  Property?       @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  tenant    Tenant?         @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  vault     Vault?          @relation(fields: [vaultId], references: [id], onDelete: SetNull)
+  folder    DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  workspace Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  tags       DocumentTag[]
+  reminders  DocumentReminder[]
+  aiAnalysis DocumentAIAnalysis?
+  comments   Comment[]
+
+  @@index([userId, folderId])
   @@index([businessId])
   @@index([propertyId])
-  @@index([userId, expiresAt])
+  @@index([workspaceId])
   @@map("documents")
+}
+
+model DocumentTag {
+  id    String  @id @default(cuid())
+  name  String  @db.VarChar(50)
+  color String? @db.VarChar(20)
+
+  documents Document[]
+
+  @@unique([name])
+  @@map("document_tags")
+}
+
+model DocumentReminder {
+  id            String   @id @default(cuid())
+  documentId    String   @map("document_id")
+  reminderTitle String   @map("reminder_title") @db.VarChar(200)
+  reminderDate  DateTime @map("reminder_date")
+  reminderType  String   @map("reminder_type") @db.VarChar(50)
+  isCompleted   Boolean  @default(false) @map("is_completed")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, reminderDate])
+  @@map("document_reminders")
+}
+
+model DocumentAIAnalysis {
+  id                String   @id @default(cuid())
+  documentId        String   @unique @map("document_id")
+  extractedEntities Json?    @map("extracted_entities")
+  aiSummary         String?  @map("ai_summary") @db.Text
+  detectedDates     Json?    @map("detected_dates")
+  detectedAmounts   Json?    @map("detected_amounts")
+  riskFlags         Json?    @map("risk_flags")
+  confidenceScore   Decimal? @map("confidence_score") @db.Decimal(5, 2)
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("document_ai_analysis")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -730,4 +885,964 @@ model VaultMember {
 
   @@unique([vaultId, userId])
   @@map("vault_members")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 11. TEAM COLLABORATION (Organizations & Workspaces)
+// ─────────────────────────────────────────────────────────────
+
+enum TeamRole {
+  owner
+  admin
+  manager
+  accountant
+  property_manager
+  viewer
+  client
+}
+
+enum WorkspaceRole {
+  admin
+  editor
+  viewer
+}
+
+model Team {
+  id          String  @id @default(cuid())
+  name        String  @db.VarChar(120)
+  description String? @db.Text
+  ownerId     String  @map("owner_id")
+  logoUrl     String? @map("logo_url") @db.VarChar(512)
+  status      String  @default("active") @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner       User             @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     TeamMember[]
+  invitations TeamInvitation[]
+  workspaces  Workspace[]
+
+  @@index([ownerId])
+  @@map("teams")
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String   @map("team_id")
+  userId   String   @map("user_id")
+  role     TeamRole @default(viewer)
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model TeamInvitation {
+  id        String   @id @default(cuid())
+  teamId    String   @map("team_id")
+  email     String   @db.VarChar(255)
+  token     String   @unique @db.VarChar(255)
+  role      TeamRole @default(viewer)
+  expiresAt DateTime @map("expires_at")
+  status    String   @default("pending") @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, email])
+  @@map("team_invitations")
+}
+
+model Workspace {
+  id          String  @id @default(cuid())
+  teamId      String  @map("team_id")
+  name        String  @db.VarChar(120)
+  description String? @db.Text
+  isPrivate   Boolean @default(false) @map("is_private")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team            Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  members         WorkspaceMember[]
+  documents       Document[]
+  documentFolders DocumentFolder[]
+  projects        Project[]
+  branding        WorkspaceBranding?
+
+  @@index([teamId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String        @map("workspace_id")
+  userId      String        @map("user_id")
+  role        WorkspaceRole @default(viewer)
+  joinedAt    DateTime      @default(now()) @map("joined_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 12. INTERNAL COLLABORATION (Comments & Mentions)
+// ─────────────────────────────────────────────────────────────
+
+model Comment {
+  id       String  @id @default(cuid())
+  userId   String  @map("user_id")
+  content  String  @db.Text
+  parentId String? @map("parent_id") // For threaded replies
+
+  businessId   String? @map("business_id")
+  propertyId   String? @map("property_id")
+  documentId   String? @map("document_id")
+  investmentId String? @map("investment_id")
+
+  isResolved Boolean @default(false) @map("is_resolved")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("ThreadReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("ThreadReplies")
+
+  business   Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  property   Property?        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  document   Document?        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  investment Investment?      @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  mentions   CommentMention[]
+
+  @@index([businessId])
+  @@index([propertyId])
+  @@index([documentId])
+  @@index([investmentId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model CommentMention {
+  id        String  @id @default(cuid())
+  commentId String  @map("comment_id")
+  userId    String  @map("user_id")
+  isRead    Boolean @default(false) @map("is_read")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("comment_mentions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 13. ENTERPRISE CRM (Clients, Leads, Pipelines, Deals)
+// ─────────────────────────────────────────────────────────────
+
+enum CRMContactType {
+  lead
+  client
+  partner
+  vendor
+  other
+}
+
+enum CRMContactStatus {
+  new
+  contacted
+  qualified
+  unqualified
+  active
+  inactive
+}
+
+model CRMContact {
+  id         String           @id @default(cuid())
+  userId     String           @map("user_id")
+  businessId String?          @map("business_id")
+  type       CRMContactType   @default(lead)
+  status     CRMContactStatus @default(new)
+
+  name     String  @db.VarChar(200)
+  email    String? @db.VarChar(255)
+  phone    String? @db.VarChar(50)
+  company  String? @db.VarChar(200)
+  jobTitle String? @map("job_title") @db.VarChar(120)
+  source   String? @db.VarChar(100)
+
+  aiSummary String? @map("ai_summary") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+
+  deals      CRMDeal[]
+  notes      CRMNote[]
+  activities CRMActivity[]
+
+  @@index([userId, type])
+  @@index([userId, status])
+  @@map("crm_contacts")
+}
+
+model CRMPipeline {
+  id          String  @id @default(cuid())
+  userId      String  @map("user_id")
+  businessId  String? @map("business_id")
+  name        String  @db.VarChar(150)
+  description String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  stages CRMStage[]
+
+  @@index([userId])
+  @@map("crm_pipelines")
+}
+
+model CRMStage {
+  id         String  @id @default(cuid())
+  pipelineId String  @map("pipeline_id")
+  name       String  @db.VarChar(100)
+  order      Int     @default(0)
+  color      String? @db.VarChar(20)
+
+  pipeline CRMPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals    CRMDeal[]
+
+  @@index([pipelineId, order])
+  @@map("crm_stages")
+}
+
+enum CRMDealStatus {
+  open
+  won
+  lost
+}
+
+model CRMDeal {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  contactId String @map("contact_id")
+  stageId   String @map("stage_id")
+
+  title             String        @db.VarChar(200)
+  value             Decimal       @default(0) @db.Decimal(18, 2)
+  currency          String        @default("USD") @db.VarChar(3)
+  probability       Int           @default(50) // 0-100
+  expectedCloseDate DateTime?     @map("expected_close_date") @db.Date
+  status            CRMDealStatus @default(open)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contact    CRMContact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  stage      CRMStage      @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  notes      CRMNote[]
+  activities CRMActivity[]
+
+  @@index([userId, status])
+  @@index([stageId])
+  @@map("crm_deals")
+}
+
+model CRMNote {
+  id        String  @id @default(cuid())
+  userId    String  @map("user_id")
+  contactId String? @map("contact_id")
+  dealId    String? @map("deal_id")
+
+  content       String  @db.Text
+  isAiGenerated Boolean @default(false) @map("is_ai_generated")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contact CRMContact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  deal    CRMDeal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+  @@index([dealId])
+  @@map("crm_notes")
+}
+
+enum CRMActivityType {
+  call
+  email
+  meeting
+  task
+}
+
+model CRMActivity {
+  id        String  @id @default(cuid())
+  userId    String  @map("user_id")
+  contactId String? @map("contact_id")
+  dealId    String? @map("deal_id")
+
+  type         CRMActivityType @default(task)
+  title        String          @db.VarChar(200)
+  description  String?         @db.Text
+  scheduledFor DateTime        @map("scheduled_for")
+  isCompleted  Boolean         @default(false) @map("is_completed")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contact CRMContact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  deal    CRMDeal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scheduledFor])
+  @@index([contactId])
+  @@index([dealId])
+  @@map("crm_activities")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 14. CLIENT PORTAL (Secure Sharing, Messaging, Agreements)
+// ─────────────────────────────────────────────────────────────
+
+model ClientPortalLink {
+  id           String  @id @default(cuid())
+  hostUserId   String  @map("host_user_id")
+  clientUserId String  @map("client_user_id")
+  businessId   String? @map("business_id")
+  status       String  @default("active") @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  hostUser   User @relation("HostUser", fields: [hostUserId], references: [id], onDelete: Cascade)
+  clientUser User @relation("ClientUser", fields: [clientUserId], references: [id], onDelete: Cascade)
+
+  @@unique([hostUserId, clientUserId])
+  @@map("client_portal_links")
+}
+
+model PortalMessage {
+  id            String  @id @default(cuid())
+  senderId      String  @map("sender_id")
+  receiverId    String  @map("receiver_id")
+  content       String  @db.Text
+  isRead        Boolean @default(false) @map("is_read")
+  attachmentUrl String? @map("attachment_url") @db.VarChar(512)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  sender   User @relation("SenderUser", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceiverUser", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@map("portal_messages")
+}
+
+model PortalAgreement {
+  id           String @id @default(cuid())
+  hostUserId   String @map("host_user_id")
+  clientUserId String @map("client_user_id")
+  documentId   String @map("document_id")
+  title        String @db.VarChar(200)
+  status       String @default("pending") @db.VarChar(20) // pending, signed
+
+  signatureText String?   @map("signature_text") @db.VarChar(120)
+  signedIp      String?   @map("signed_ip") @db.VarChar(50)
+  signedAt      DateTime? @map("signed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Normally we would link these directly with relation fields,
+  // but to avoid massive file changes, we will manage references at the application level
+  // Document mapping happens implicitly or via standard document querying
+
+  @@index([clientUserId, status])
+  @@map("portal_agreements")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 15. REAL-TIME COMMUNICATION (Chat, Teams, DMs)
+// ─────────────────────────────────────────────────────────────
+
+model ChatChannel {
+  id         String  @id @default(cuid())
+  name       String? @db.VarChar(120) // Nullable for direct messages
+  type       String  @default("direct") @db.VarChar(20) // direct, team, workspace, document
+  businessId String? @map("business_id")
+  teamId     String? @map("team_id")
+  documentId String? @map("document_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+
+  @@index([type])
+  @@index([businessId])
+  @@index([teamId])
+  @@map("chat_channels")
+}
+
+model ChatParticipant {
+  id          String   @id @default(cuid())
+  channelId   String   @map("channel_id")
+  userId      String   @map("user_id")
+  unreadCount Int      @default(0) @map("unread_count")
+  lastReadAt  DateTime @default(now()) @map("last_read_at")
+
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  channel ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User        @relation("UserChatParticipant", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@map("chat_participants")
+}
+
+model ChatMessage {
+  id            String  @id @default(cuid())
+  channelId     String  @map("channel_id")
+  senderId      String? @map("sender_id") // Nullable if system/AI
+  content       String  @db.Text
+  isSystem      Boolean @default(false) @map("is_system")
+  attachmentUrl String? @map("attachment_url") @db.VarChar(512)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  channel ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender  User?       @relation("UserChatMessage", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([channelId, createdAt(sort: Desc)])
+  @@index([senderId])
+  @@map("chat_messages")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 16. PROJECT MANAGEMENT (Projects & Tasks)
+// ─────────────────────────────────────────────────────────────
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  status      String    @default("active") @db.VarChar(20) // active, on_hold, completed
+  dueDate     DateTime? @map("due_date")
+
+  workspaceId String? @map("workspace_id")
+  teamId      String? @map("team_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([workspaceId])
+  @@index([teamId])
+  @@map("projects")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  projectId   String    @map("project_id")
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  status      String    @default("todo") @db.VarChar(20) // todo, in_progress, review, done
+  priority    String    @default("medium") @db.VarChar(20) // low, medium, high, urgent
+  dueDate     DateTime? @map("due_date")
+  type        String    @default("general") @db.VarChar(50) // property, business, finance, document, general
+
+  propertyId String? @map("property_id")
+  businessId String? @map("business_id")
+  documentId String? @map("document_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignments TaskAssignment[]
+  comments    TaskComment[]
+
+  @@index([projectId])
+  @@index([status])
+  @@map("tasks")
+}
+
+model TaskAssignment {
+  id         String   @id @default(cuid())
+  taskId     String   @map("task_id")
+  userId     String   @map("user_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation("UserTaskAssignment", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@map("task_assignments")
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String   @map("task_id")
+  userId    String   @map("user_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation("UserTaskComment", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_comments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 17. ACTIVITY TRACKING (Audit Logs)
+// ─────────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id          String  @id @default(cuid())
+  userId      String  @map("user_id")
+  action      String  @db.VarChar(50) // e.g., CREATE, UPDATE, DELETE, UPLOAD
+  module      String  @db.VarChar(50) // e.g., DOCUMENT, TASK, BUSINESS, PROPERTY, PROJECT
+  entityId    String? @map("entity_id") @db.VarChar(100)
+  description String  @db.Text
+  metadata    Json? // Stores specific changes or snapshot
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([module])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@map("activity_logs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 18. SCHEDULING & CALENDAR
+// ─────────────────────────────────────────────────────────────
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  startTime   DateTime @map("start_time")
+  endTime     DateTime @map("end_time")
+  type        String   @default("MEETING") @db.VarChar(50) // MEETING, REMINDER, TASK_DEADLINE, MAINTENANCE, GENERAL
+  isAllDay    Boolean  @default(false) @map("is_all_day")
+
+  // Polymorphic Links
+  propertyId  String? @map("property_id")
+  taskId      String? @map("task_id")
+  leadId      String? @map("lead_id")
+  workspaceId String? @map("workspace_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserCalendarEvents", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([startTime, endTime])
+  @@index([type])
+  @@map("calendar_events")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 19. NOTIFICATIONS & MENTIONS
+// ─────────────────────────────────────────────────────────────
+
+model Notification {
+  id      String  @id @default(cuid())
+  userId  String  @map("user_id")
+  type    String  @db.VarChar(50) // MENTION, ASSIGNMENT, AI_ALERT, CRM_ALERT, SYSTEM
+  message String  @db.Text
+  isRead  Boolean @default(false) @map("is_read")
+  link    String? @db.VarChar(255) // Optional URL to redirect to (e.g. /projects/123)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model PushToken {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  token      String   @unique
+  provider   String   @db.VarChar(50) // EXPO, FCM, APNS
+  deviceType String   @db.VarChar(50) // IOS, ANDROID, WEB
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserPushTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+model NotificationPreference {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  type         String   @db.VarChar(50) // AI_ALERT, INVOICE, CRM, MENTION, SYSTEM
+  pushEnabled  Boolean  @default(true) @map("push_enabled")
+  emailEnabled Boolean  @default(false) @map("email_enabled")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@map("notification_preferences")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 20. SECURITY & AUDIT LOGS
+// ─────────────────────────────────────────────────────────────
+
+model SecurityLog {
+  id        String  @id @default(cuid())
+  userId    String? @map("user_id") // Optional because failed logins might not have a valid userId resolved
+  action    String  @db.VarChar(50) // LOGIN, LOGIN_FAILED, FILE_DOWNLOAD, PERMISSION_CHANGE, SUSPICIOUS_ACTIVITY
+  ipAddress String? @map("ip_address") @db.VarChar(45)
+  userAgent String? @map("user_agent") @db.Text
+  severity  String  @default("INFO") @db.VarChar(20) // INFO, WARNING, CRITICAL
+  details   String  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation("UserSecurityLogs", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([severity])
+  @@index([createdAt(sort: Desc)])
+  @@map("security_logs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 21. FINANCIAL OS (LEDGERS, REPORTS, SUBSCRIPTIONS)
+// ─────────────────────────────────────────────────────────────
+
+model FinancialCategory {
+  id       String    @id @default(cuid())
+  userId   String    @map("user_id")
+  name     String    @db.VarChar(100)
+  type     String    @default("OPERATING") @db.VarChar(50) // OPERATING, CAPITAL, TAX
+  color    String?   @db.VarChar(10)
+  expenses Expense[]
+
+  @@index([userId])
+  @@map("financial_categories")
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String  @map("invoice_id")
+  description String  @db.VarChar(255)
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(18, 2)
+  taxRate     Decimal @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  amount      Decimal @db.Decimal(18, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  invoiceId     String   @map("invoice_id")
+  transactionId String?  @map("transaction_id")
+  amount        Decimal  @db.Decimal(18, 2)
+  method        String   @db.VarChar(50) // CREDIT_CARD, WIRE, ACH, MANUAL
+  status        String   @default("COMPLETED") @db.VarChar(50)
+  paymentDate   DateTime @default(now()) @map("payment_date")
+  referenceId   String?  @map("reference_id") @db.VarChar(100)
+
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([transactionId])
+  @@map("payments")
+}
+
+model LedgerEntry {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  walletId      String   @map("wallet_id") // Acts as Account ID
+  transactionId String?  @map("transaction_id")
+  debit         Decimal  @default(0) @db.Decimal(18, 2)
+  credit        Decimal  @default(0) @db.Decimal(18, 2)
+  balance       Decimal  @db.Decimal(18, 2)
+  memo          String?  @db.VarChar(255)
+  entryDate     DateTime @default(now()) @map("entry_date")
+
+  wallet      Wallet       @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([walletId, entryDate(sort: Desc)])
+  @@map("ledger_entries")
+}
+
+model FinancialReport {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  type        String   @db.VarChar(50) // PNL, BALANCE_SHEET, CASH_FLOW
+  periodStart DateTime @map("period_start") @db.Date
+  periodEnd   DateTime @map("period_end") @db.Date
+  data        Json
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  @@index([userId, type])
+  @@map("financial_reports")
+}
+
+model Subscription {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  businessId      String?  @map("business_id")
+  planId          String?  @map("plan_id")
+  planName        String   @map("plan_name") @db.VarChar(100)
+  amount          Decimal  @db.Decimal(18, 2)
+  currency        String   @default("USD") @db.VarChar(3)
+  interval        String   @default("MONTHLY") @db.VarChar(20) // MONTHLY, YEARLY
+  status          String   @default("ACTIVE") @db.VarChar(50) // ACTIVE, CANCELED, PAST_DUE
+  nextBillingDate DateTime @map("next_billing_date") @db.Date
+
+  stripeSubscriptionId String? @unique @map("stripe_subscription_id") @db.VarChar(255)
+  stripePriceId        String? @map("stripe_price_id") @db.VarChar(100)
+  
+  storageUsed    Int @default(0) @map("storage_used")
+  aiTokensUsed   Int @default(0) @map("ai_tokens_used")
+  automationRuns Int @default(0) @map("automation_runs")
+  teamMembers    Int @default(0) @map("team_members")
+  uploadsCount   Int @default(0) @map("uploads_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  plan SaaSPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([businessId])
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 22. CROSS-DEVICE SESSION & SYNC
+// ─────────────────────────────────────────────────────────────
+
+model Device {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  deviceType   String   @map("device_type") @db.VarChar(50) // e.g., "iphone", "desktop-chrome"
+  osVersion    String?  @map("os_version") @db.VarChar(50)
+  appVersion   String?  @map("app_version") @db.VarChar(50)
+  pushTokenId  String?  @map("push_token_id")
+  lastActiveAt DateTime @default(now()) @map("last_active_at")
+  isActive     Boolean  @default(true) @map("is_active")
+  isTrusted    Boolean  @default(false) @map("is_trusted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation("UserDevices", fields: [userId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@index([userId, isActive])
+  @@map("devices")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  deviceId     String   @map("device_id")
+  tokenHash    String   @unique @map("token_hash") @db.VarChar(255) // Hashed Refresh Token
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  expiresAt    DateTime @map("expires_at")
+  isValid      Boolean  @default(true) @map("is_valid")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation("UserSessions", fields: [userId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isValid])
+  @@index([deviceId])
+  @@index([tokenHash])
+  @@map("sessions")
+}
+
+model SyncDraft {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  entityType   String   @map("entity_type") @db.VarChar(50) // e.g., "ai_prompt", "invoice_builder"
+  entityId     String?  @map("entity_id") @db.VarChar(100) // Optional target ID
+  payload      Json     // The draft content
+  lastSyncedAt DateTime @default(now()) @map("last_synced_at")
+  deviceId     String?  @map("device_id") // Originating device (optional)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserSyncDrafts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, lastSyncedAt(sort: Desc)])
+  @@map("sync_drafts")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 23. ADMIN & PLATFORM MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  subject     String   @db.VarChar(255)
+  description String   @db.Text
+  status      String   @default("open") @db.VarChar(20) // open, in_progress, resolved, closed
+  priority    String   @default("medium") @db.VarChar(20) // low, medium, high, urgent
+  category    String   @default("general") @db.VarChar(50) // billing, technical, account, feature_request
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages TicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model TicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String   @map("ticket_id")
+  senderId   String   @map("sender_id") // Can be user or admin
+  content    String   @db.Text
+  isInternal Boolean  @default(false) @map("is_internal") // Only admins can see
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("ticket_messages")
+}
+
+model PlatformSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique @db.VarChar(100)
+  value       Json
+  description String?  @db.VarChar(255)
+  
+  updatedBy   String?  @map("updated_by")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 24. SAAS PLANS
+// ─────────────────────────────────────────────────────────────
+
+model SaaSPlan {
+  id            String   @id @default(cuid())
+  name          String   @unique @db.VarChar(100)
+  description   String?  @db.Text
+  price         Decimal  @db.Decimal(18, 2)
+  interval      String   @default("MONTHLY") @db.VarChar(20)
+  stripePriceId String?  @map("stripe_price_id") @db.VarChar(100)
+  isActive      Boolean  @default(true) @map("is_active")
+
+  // Features & Limits
+  maxStorage    Int      @default(0) @map("max_storage")     // in MB, e.g. 1024 = 1GB
+  maxAiTokens   Int      @default(0) @map("max_ai_tokens")
+  maxAutomation Int      @default(0) @map("max_automation")
+  maxTeamMembers Int     @default(0) @map("max_team_members")
+  maxUploads    Int      @default(0) @map("max_uploads")
+
+  hasCrmAccess       Boolean @default(false) @map("has_crm_access")
+  hasAnalyticsAccess Boolean @default(false) @map("has_analytics_access")
+  hasAdvancedTeam    Boolean @default(false) @map("has_advanced_team")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("saas_plans")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 25. WHITE-LABEL CONFIGURATION
+// ─────────────────────────────────────────────────────────────
+
+model WhiteLabelConfig {
+  id               String   @id @default(cuid())
+  businessId       String   @unique @map("business_id")
+  
+  logoUrl          String?  @map("logo_url") @db.VarChar(512)
+  primaryColor     String?  @default("#2563EB") @map("primary_color") @db.VarChar(20)
+  secondaryColor   String?  @default("#4F46E5") @map("secondary_color") @db.VarChar(20)
+  themeMode        String   @default("light") @map("theme_mode") @db.VarChar(20)
+  customDomain     String?  @unique @map("custom_domain") @db.VarChar(255)
+  emailReplyTo     String?  @map("email_reply_to") @db.VarChar(255)
+  emailSignature   String?  @map("email_signature") @db.Text
+  
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@map("white_label_configs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 26. WORKSPACE BRANDING CONFIGURATION
+// ─────────────────────────────────────────────────────────────
+
+model WorkspaceBranding {
+  id              String   @id @default(cuid())
+  workspaceId     String   @unique @map("workspace_id")
+  
+  logoUrl         String?  @map("logo_url") @db.VarChar(512)
+  primaryColor    String?  @default("#00FF88") @map("primary_color") @db.VarChar(20)
+  sidebarColor    String?  @default("#0A0F14") @map("sidebar_color") @db.VarChar(20)
+  aiAssistantName String?  @default("Vault AI") @map("ai_assistant_name") @db.VarChar(100)
+  themeMode       String   @default("system") @map("theme_mode") @db.VarChar(20)
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  @@map("workspace_branding")
 }
