@@ -1,4 +1,5 @@
 'use strict';
+// DEPLOY VERSION: v5 — 2026-05-22 — CORS+secureStorage fix
 /**
  * VaultEXP — Express Application
  * ============================================================
@@ -109,6 +110,7 @@ app.get('/health', async (_req, res) => {
     uptime:      Math.floor(process.uptime()),
     environment: process.env.NODE_ENV || 'development',
     timestamp:   new Date().toISOString(),
+    version:     'v5',
   });
 });
 
