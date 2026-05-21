@@ -1,12 +1,13 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
+
 WORKDIR /app
 
-# Install dependencies
 COPY package*.json ./
-RUN npm install
 
-# Copy source
+RUN npm install --legacy-peer-deps
+
 COPY . .
 
 EXPOSE 5000
+
 CMD ["node", "server.js"]
