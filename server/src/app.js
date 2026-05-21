@@ -24,65 +24,41 @@ const prisma       = require('./lib/prisma');
 const app = express();
 
 // ============================================================
-// CORS — must come BEFORE helmet so preflight is handled first
+// CORS — MUST be the very first middleware, before everything.
+// Simple explicit origin array — no custom functions, no regex.
+// This guarantees browser preflight (OPTIONS) is handled cleanly.
 // ============================================================
 
-const ALLOWED_ORIGINS = [
-  // Vercel production deployments
-  'https://vault-exp-web-app-client.vercel.app',
-  'https://vaultexp.vercel.app',
-  'https://vault-web-app.vercel.app',
-  // Any *.vercel.app subdomain (preview deploys, branch deploys)
-  /https:\/\/.*\.vercel\.app$/,
-  // Local development
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000',
-];
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://vault-exp-web-app-client.vercel.app',
+    'https://vault-exp-web-app-cli-git-99973a-meetingswebnoor-3141s-projects.vercel.app',
+    'https://vault-exp-web-app-client-3gqU0pvf.vercel.app',
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id'],
+  optionsSuccessStatus: 200,
+}));
 
-// If CORS_ORIGIN is set in env, add each comma-separated value
-if (process.env.CORS_ORIGIN) {
-  process.env.CORS_ORIGIN.split(',').forEach((origin) => {
-    const trimmed = origin.trim();
-    if (trimmed && !ALLOWED_ORIGINS.includes(trimmed)) {
-      ALLOWED_ORIGINS.push(trimmed);
-    }
-  });
-}
+// Explicitly handle OPTIONS preflight for ALL routes.
+// Some proxies/CDNs drop OPTIONS replies — this guarantees they land.
+app.options('*', cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://vault-exp-web-app-client.vercel.app',
+    'https://vault-exp-web-app-cli-git-99973a-meetingswebnoor-3141s-projects.vercel.app',
+    'https://vault-exp-web-app-client-3gqU0pvf.vercel.app',
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id'],
+  optionsSuccessStatus: 200,
+}));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Thunder Client, Postman)
-      if (!origin) return callback(null, true);
-
-      const isAllowed = ALLOWED_ORIGINS.some((allowed) =>
-        allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
-      );
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.warn(`[CORS] Blocked origin: ${origin}`);
-        // In production, block; in dev, allow all for easier testing
-        if (process.env.NODE_ENV === 'production') {
-          callback(new Error(`Origin ${origin} not allowed by CORS`));
-        } else {
-          callback(null, true);
-        }
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'x-workspace-id',
-      'x-request-id',
-    ],
-    optionsSuccessStatus: 200, // For IE11 compatibility
-  })
-);
 
 // ============================================================
 // SECURITY HEADERS
