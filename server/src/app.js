@@ -1,17 +1,18 @@
 'use strict';
-// DEPLOY VERSION: v5 — 2026-05-22 — CORS+secureStorage fix
+// DEPLOY VERSION: v6 — 2026-05-22 — Production CORS + full auth stack
+
 /**
  * VaultEXP — Express Application
  * ============================================================
- * Middleware order (ORDER MATTERS — DO NOT REARRANGE):
- *   1. CORS + OPTIONS preflight
- *   2. Security headers (helmet)
- *   3. Body parsing  ← must be before ANY route reads req.body
+ * Middleware order (DO NOT REARRANGE):
+ *   1. CORS  + OPTIONS preflight  ← must be FIRST
+ *   2. Body parsing               ← must be BEFORE all routes
+ *   3. Security (helmet)
  *   4. Cookie / compression / logging
  *   5. Health check
  *   6. API routes
  *   7. 404 handler
- *   8. Global error handler  ← must be LAST with 4 args
+ *   8. Global error handler       ← must be LAST, 4 params
  */
 
 const express      = require('express');
@@ -26,13 +27,13 @@ const app = express();
 // ============================================================
 // 1. CORS
 // ============================================================
-// MUST be first — before helmet, body parsing, and all routes.
-// Simple explicit string array: no regex, no custom function.
-// "Provisional headers are shown" + 0B = preflight failing.
-// app.options('*') below ensures OPTIONS is answered for every route.
+// Production-safe custom origin function.
+// Add future domains to allowedOrigins — no other change needed.
+// Non-browser clients (Thunder Client, curl, mobile) have no Origin
+// header and are allowed through unconditionally.
 // ============================================================
 
-const CORS_ORIGINS = [
+const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://vault-exp-web-app-client.vercel.app',
@@ -41,22 +42,52 @@ const CORS_ORIGINS = [
 ];
 
 const corsOptions = {
-  origin:             CORS_ORIGINS,
-  credentials:        true,
-  methods:            ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders:     ['Content-Type', 'Authorization', 'x-workspace-id'],
-  optionsSuccessStatus: 200,
+  origin: function (origin, callback) {
+    // Allow non-browser requests (no Origin header): curl, Postman, Thunder Client, mobile apps
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('[CORS] Blocked origin:', origin);
+      callback(new Error('CORS not allowed for origin: ' + origin));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type',
+    'Accept',
+    'Authorization',
+    'x-workspace-id',
+  ],
 };
 
-// Apply CORS to all requests
+// Apply CORS to ALL requests (including regular GET/POST)
 app.use(cors(corsOptions));
 
-// Explicitly answer OPTIONS preflight for EVERY route.
-// This is critical — Railway's reverse proxy can intercept OPTIONS.
+// Explicitly handle OPTIONS preflight for every route.
+// This is required for:
+//   - Vercel frontend (cross-origin)
+//   - Requests with Authorization header
+//   - Requests with Content-Type: application/json
+//   - credentials mode (withCredentials: true)
 app.options('*', cors(corsOptions));
 
 // ============================================================
-// 2. SECURITY HEADERS (helmet)
+// 2. BODY PARSING — MUST be before ALL routes
+// ============================================================
+// Without this, req.body is undefined inside every handler.
+// express.json()          → parses application/json bodies
+// express.urlencoded()    → parses form-encoded bodies
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ============================================================
+// 3. SECURITY HEADERS
 // ============================================================
 
 app.use(
@@ -66,16 +97,6 @@ app.use(
     contentSecurityPolicy:     false,
   })
 );
-
-// ============================================================
-// 3. BODY PARSING — MUST come before ALL routes
-// ============================================================
-// Without this, req.body is undefined in every handler.
-// express.json()  → parses application/json
-// express.urlencoded() → parses form data
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================================
 // 4. SUPPORTING MIDDLEWARE
@@ -89,7 +110,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // ============================================================
-// 5. HEALTH CHECK (no auth, no body parsing needed)
+// 5. HEALTH CHECK
 // ============================================================
 
 app.get('/health', async (_req, res) => {
@@ -110,22 +131,22 @@ app.get('/health', async (_req, res) => {
     uptime:      Math.floor(process.uptime()),
     environment: process.env.NODE_ENV || 'development',
     timestamp:   new Date().toISOString(),
-    version:     'v5',
+    version:     'v6',
   });
 });
 
 // ============================================================
 // 6. SAFE MODULE LOADER
 // ============================================================
-// Wraps require() so a broken module never crashes the server.
-// If a module fails to load → returns a 503 stub router.
+// Wraps require() so a broken optional module never crashes the server.
+// Returns a 503 stub router instead of throwing.
 
 function safeLoad(modulePath) {
   try {
     return require(modulePath);
   } catch (err) {
-    console.error(`[APP] ❌ Failed to load: ${modulePath}`);
-    console.error(`[APP]    Reason: ${err.message}`);
+    console.error('[APP] ❌ Failed to load:', modulePath);
+    console.error('[APP]   ', err.message);
 
     const stub = express.Router();
     stub.all('*', (_req, res) =>
@@ -140,10 +161,14 @@ function safeLoad(modulePath) {
 }
 
 // ============================================================
-// 7. AUTH ROUTES (public — no token required)
+// 7. AUTH ROUTES  (public — no token required)
 // ============================================================
-// Directly require (not safeLoad) so import errors are visible.
-// If auth routes fail to load, the server MUST log it clearly.
+// Direct require (not safeLoad) so any load error is logged loudly.
+// Registered at:
+//   POST /api/auth/signup
+//   POST /api/auth/login
+//   POST /api/auth/logout
+//   GET  /api/auth/me
 
 const authRoutes = require('./modules/auth/auth.routes');
 app.use('/api/auth', authRoutes);
@@ -197,23 +222,16 @@ app.use((req, res) => {
 // ============================================================
 // 10. GLOBAL ERROR HANDLER
 // ============================================================
-// MUST have exactly 4 parameters: (err, req, res, next)
-// MUST be last middleware registered.
-// Logs the FULL error so Railway logs expose every crash.
+// MUST have exactly 4 parameters — Express identifies error middleware by arity.
+// MUST be the LAST middleware registered.
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  // Always log full error for Railway visibility
   console.error('GLOBAL ERROR:', err);
 
-  const statusCode = err.statusCode || err.status || 500;
-  const message    = err.message || 'Internal Server Error';
-
-  res.status(statusCode).json({
-    success:   false,
-    message,
-    error:     err.message,
-    errorCode: err.code || undefined,
+  res.status(err.statusCode || err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
   });
 });
 

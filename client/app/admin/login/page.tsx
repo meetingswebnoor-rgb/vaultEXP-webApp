@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AuthService } from '@/services/auth.service';
+import { AuthService, extractToken, extractUser } from '@/services/auth.service';
 import { useAuthStore } from '@/store/authStore';
 import { Shield, Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -38,7 +38,12 @@ function AdminLoginContent() {
       return res;
     },
     onSuccess: (data) => {
-      const user = data.data.user;
+      const user  = extractUser(data);
+      const token = extractToken(data);
+      if (!user || !token) {
+        setErrorMsg('Invalid server response. Please try again.');
+        return;
+      }
       if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
         setErrorMsg('Unauthorized: Administrator clearance required.');
         return;
@@ -47,13 +52,8 @@ function AdminLoginContent() {
         setErrorMsg('Your account is awaiting administrator approval.');
         return;
       }
-      login(data.data.accessToken, user);
-      
-      // Prevent infinite redirect loops if callbackUrl points to login
+      login(token, user);
       const finalUrl = callbackUrl.includes('/admin/login') ? '/admin/dashboard' : callbackUrl;
-      
-      // Use window.location.href to bypass Next.js App Router cache
-      // This ensures the dashboard layout and AuthGuard mount freshly with the updated token.
       window.location.href = finalUrl;
     },
     onError: (error: any) => {

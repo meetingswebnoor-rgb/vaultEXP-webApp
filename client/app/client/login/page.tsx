@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AuthService } from '@/services/auth.service';
+import { AuthService, extractToken, extractUser } from '@/services/auth.service';
 import { useAuthStore } from '@/store/authStore';
 import { Briefcase, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -37,7 +37,12 @@ function ClientLoginContent() {
       return res;
     },
     onSuccess: (data) => {
-      const user = data.data.user;
+      const user  = extractUser(data);
+      const token = extractToken(data);
+      if (!user || !token) {
+        setErrorMsg('Invalid server response. Please try again.');
+        return;
+      }
       if (user.role !== 'CLIENT') {
         setErrorMsg('Unauthorized: Client portal access required.');
         return;
@@ -46,7 +51,7 @@ function ClientLoginContent() {
         setErrorMsg('Your account is awaiting administrator approval.');
         return;
       }
-      login(data.data.accessToken, user);
+      login(token, user);
       router.push(callbackUrl);
     },
     onError: (error: any) => {

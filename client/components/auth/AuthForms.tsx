@@ -9,7 +9,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { AuthService } from '@/services/auth.service';
+import { AuthService, extractToken, extractUser } from '@/services/auth.service';
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import { UnifiedAuthLayout } from './UnifiedAuthLayout';
 import {
@@ -49,11 +49,9 @@ function LoginInner() {
     setLoading(true); setError(null);
     try {
       const res = await AuthService.login({ email, password });
-      // Backend response: { success, token, user }
-      // (also includes data: { user, accessToken } for legacy compatibility)
-      const user  = res.user  || res.data?.user;
-      const token = res.token || res.data?.accessToken;
-      if (!token || !user) throw new Error('Invalid server response — missing token or user.');
+      const token = extractToken(res);
+      const user  = extractUser(res);
+      if (!token || !user) throw new Error('Server returned an invalid response. Please try again.');
       login(token, user);
 
       if (!user.isApproved && (user.role === 'CLIENT' || user.role === 'ADMIN')) {
@@ -76,7 +74,7 @@ function LoginInner() {
       window.location.href = finalUrl;
     } catch (e: any) {
       if (!e.response) {
-        setError(e.message || 'Server unreachable. Please ensure the backend is running.');
+        setError(e.message || 'Server unreachable. Check your connection or try again.');
       } else {
         setError(e.response?.data?.message ?? 'Invalid email or password.');
       }
@@ -176,21 +174,17 @@ export function AuthSignupForm() {
     if (!validate()) return;
     setLoading(true); setError(null);
     try {
-      const res = await AuthService.signup({ name, email, password });
-      // Backend response: { success, token, user }
-      const token = res.token;
-      const user = res.user;
+      const res   = await AuthService.signup({ name, email, password });
+      const token = extractToken(res);
+      const user  = extractUser(res);
+      if (!token || !user) throw new Error('Server returned an invalid response. Please try again.');
       login(token, user);
-      if (user.role === 'CLIENT') {
-        window.location.href = '/portal';
-      } else {
-        window.location.href = '/dashboard';
-      }
+      window.location.href = user.role === 'CLIENT' ? '/portal' : '/dashboard';
     } catch (e: any) {
       if (!e.response) {
-        setError('Server unreachable. Please ensure the backend is running.');
+        setError(e.message || 'Server unreachable. Check your connection or try again.');
       } else {
-        setError(e.response?.data?.message ?? 'Something went wrong during account creation. Please try again.');
+        setError(e.response?.data?.message ?? 'Something went wrong. Please try again.');
       }
       setLoading(false);
     }
