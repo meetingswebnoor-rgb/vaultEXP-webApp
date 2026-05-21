@@ -1,17 +1,17 @@
+'use strict';
 /**
- * VaultEXP Express Application
+ * VaultEXP — Express Application
  * ============================================================
- * Production-grade, Railway-ready.
- *
- * Changes from previous version:
- * - CORS: explicit origin allowlist (fixes Vercel credential requests)
- * - Helmet: cross-origin policies relaxed for API use
- * - tickets + subscriptions routes re-enabled (import bug fixed)
- * - /api/tax route added
- * - Full error handler with AppError support
+ * Middleware order (ORDER MATTERS — DO NOT REARRANGE):
+ *   1. CORS + OPTIONS preflight
+ *   2. Security headers (helmet)
+ *   3. Body parsing  ← must be before ANY route reads req.body
+ *   4. Cookie / compression / logging
+ *   5. Health check
+ *   6. API routes
+ *   7. 404 handler
+ *   8. Global error handler  ← must be LAST with 4 args
  */
-
-require('dotenv').config();
 
 const express      = require('express');
 const cors         = require('cors');
@@ -19,66 +19,67 @@ const helmet       = require('helmet');
 const morgan       = require('morgan');
 const compression  = require('compression');
 const cookieParser = require('cookie-parser');
-const prisma       = require('./lib/prisma');
 
 const app = express();
 
 // ============================================================
-// CORS — MUST be the very first middleware, before everything.
-// Simple explicit origin array — no custom functions, no regex.
-// This guarantees browser preflight (OPTIONS) is handled cleanly.
+// 1. CORS
+// ============================================================
+// MUST be first — before helmet, body parsing, and all routes.
+// Simple explicit string array: no regex, no custom function.
+// "Provisional headers are shown" + 0B = preflight failing.
+// app.options('*') below ensures OPTIONS is answered for every route.
 // ============================================================
 
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://vault-exp-web-app-client.vercel.app',
-    'https://vault-exp-web-app-cli-git-99973a-meetingswebnoor-3141s-projects.vercel.app',
-    'https://vault-exp-web-app-client-3gqU0pvf.vercel.app',
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id'],
-  optionsSuccessStatus: 200,
-}));
+const CORS_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://vault-exp-web-app-client.vercel.app',
+  'https://vault-exp-web-app-cli-git-99973a-meetingswebnoor-3141s-projects.vercel.app',
+  'https://vault-exp-web-app-client-3gqU0pvf.vercel.app',
+];
 
-// Explicitly handle OPTIONS preflight for ALL routes.
-// Some proxies/CDNs drop OPTIONS replies — this guarantees they land.
-app.options('*', cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://vault-exp-web-app-client.vercel.app',
-    'https://vault-exp-web-app-cli-git-99973a-meetingswebnoor-3141s-projects.vercel.app',
-    'https://vault-exp-web-app-client-3gqU0pvf.vercel.app',
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-workspace-id'],
+const corsOptions = {
+  origin:             CORS_ORIGINS,
+  credentials:        true,
+  methods:            ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders:     ['Content-Type', 'Authorization', 'x-workspace-id'],
   optionsSuccessStatus: 200,
-}));
+};
 
+// Apply CORS to all requests
+app.use(cors(corsOptions));
+
+// Explicitly answer OPTIONS preflight for EVERY route.
+// This is critical — Railway's reverse proxy can intercept OPTIONS.
+app.options('*', cors(corsOptions));
 
 // ============================================================
-// SECURITY HEADERS
+// 2. SECURITY HEADERS (helmet)
 // ============================================================
 
 app.use(
   helmet({
-    // Allow cross-origin requests to this API
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     crossOriginOpenerPolicy:   false,
-    contentSecurityPolicy:     false, // Not needed for a pure API
+    contentSecurityPolicy:     false,
   })
 );
 
 // ============================================================
-// CORE MIDDLEWARE
+// 3. BODY PARSING — MUST come before ALL routes
 // ============================================================
+// Without this, req.body is undefined in every handler.
+// express.json()  → parses application/json
+// express.urlencoded() → parses form data
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ============================================================
+// 4. SUPPORTING MIDDLEWARE
+// ============================================================
+
 app.use(cookieParser());
 app.use(compression());
 
@@ -87,12 +88,13 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // ============================================================
-// HEALTH CHECK  (no auth required)
+// 5. HEALTH CHECK (no auth, no body parsing needed)
 // ============================================================
 
 app.get('/health', async (_req, res) => {
   let dbStatus = 'disconnected';
   try {
+    const prisma = require('./lib/prisma');
     await prisma.$queryRaw`SELECT 1`;
     dbStatus = 'connected';
   } catch (err) {
@@ -107,29 +109,27 @@ app.get('/health', async (_req, res) => {
     uptime:      Math.floor(process.uptime()),
     environment: process.env.NODE_ENV || 'development',
     timestamp:   new Date().toISOString(),
-    version:     process.env.npm_package_version || '1.0.0',
   });
 });
 
 // ============================================================
-// SAFE MODULE LOADER
-// Wraps require() so a broken module never crashes the server.
-// Returns a 503 router for that prefix instead.
+// 6. SAFE MODULE LOADER
 // ============================================================
+// Wraps require() so a broken module never crashes the server.
+// If a module fails to load → returns a 503 stub router.
 
 function safeLoad(modulePath) {
   try {
-    const mod = require(modulePath);
-    return mod;
+    return require(modulePath);
   } catch (err) {
-    console.error(`[APP] ❌ Failed to load module: ${modulePath}`);
-    console.error(`[APP]    ${err.message}`);
+    console.error(`[APP] ❌ Failed to load: ${modulePath}`);
+    console.error(`[APP]    Reason: ${err.message}`);
 
     const stub = express.Router();
     stub.all('*', (_req, res) =>
       res.status(503).json({
         success: false,
-        message: `Service temporarily unavailable`,
+        message: 'Service temporarily unavailable',
         module:  modulePath,
       })
     );
@@ -138,22 +138,20 @@ function safeLoad(modulePath) {
 }
 
 // ============================================================
-// AUTH ROUTES  (public — no token required)
+// 7. AUTH ROUTES (public — no token required)
 // ============================================================
+// Directly require (not safeLoad) so import errors are visible.
+// If auth routes fail to load, the server MUST log it clearly.
 
-app.use('/api/auth', safeLoad('./modules/auth/auth.routes'));
-
-// ============================================================
-// CLIENT PORTAL
-// ============================================================
-
-app.use('/api/client', safeLoad('./modules/client/client.routes'));
-app.use('/api/portal', safeLoad('./modules/portal/portal.routes'));
+const authRoutes = require('./modules/auth/auth.routes');
+app.use('/api/auth', authRoutes);
 
 // ============================================================
-// CORE APPLICATION MODULES
+// 8. ALL OTHER API ROUTES (wrapped in safeLoad)
 // ============================================================
 
+app.use('/api/client',        safeLoad('./modules/client/client.routes'));
+app.use('/api/portal',        safeLoad('./modules/portal/portal.routes'));
 app.use('/api/dashboard',     safeLoad('./modules/dashboard/dashboard.routes'));
 app.use('/api/admin',         safeLoad('./admin/admin.routes'));
 app.use('/api/user',          safeLoad('./modules/user/user.routes'));
@@ -176,23 +174,13 @@ app.use('/api/crm',           safeLoad('./modules/crm/crm.routes'));
 app.use('/api/collaboration', safeLoad('./modules/collaboration/collaboration.routes'));
 app.use('/api/sync',          safeLoad('./modules/sync/sync.routes'));
 app.use('/api/tax',           safeLoad('./modules/tax/tax.routes'));
-
-// ============================================================
-// AI + AUTOMATION
-// ============================================================
-
-app.use('/api/ai',         safeLoad('./modules/ai/ai.routes'));
-app.use('/api/automation', safeLoad('./modules/automation/automation.routes'));
-
-// ============================================================
-// SUPPORT MODULES (fixed & re-enabled)
-// ============================================================
-
+app.use('/api/ai',            safeLoad('./modules/ai/ai.routes'));
+app.use('/api/automation',    safeLoad('./modules/automation/automation.routes'));
 app.use('/api/subscriptions', safeLoad('./modules/subscription/subscription.routes'));
 app.use('/api/tickets',       safeLoad('./modules/tickets/tickets.routes'));
 
 // ============================================================
-// 404 HANDLER
+// 9. 404 HANDLER
 // ============================================================
 
 app.use((req, res) => {
@@ -205,30 +193,25 @@ app.use((req, res) => {
 });
 
 // ============================================================
-// GLOBAL ERROR HANDLER
+// 10. GLOBAL ERROR HANDLER
 // ============================================================
+// MUST have exactly 4 parameters: (err, req, res, next)
+// MUST be last middleware registered.
+// Logs the FULL error so Railway logs expose every crash.
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  // CORS errors
-  if (err.message && err.message.includes('not allowed by CORS')) {
-    return res.status(403).json({ success: false, message: err.message });
-  }
+  // Always log full error for Railway visibility
+  console.error('GLOBAL ERROR:', err);
 
   const statusCode = err.statusCode || err.status || 500;
   const message    = err.message || 'Internal Server Error';
 
-  if (statusCode >= 500) {
-    console.error('[ERROR]', err);
-  } else {
-    console.warn('[WARN]', err.message);
-  }
-
   res.status(statusCode).json({
     success:   false,
     message,
+    error:     err.message,
     errorCode: err.code || undefined,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
 

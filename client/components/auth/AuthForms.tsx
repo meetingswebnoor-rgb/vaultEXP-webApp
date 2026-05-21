@@ -49,40 +49,41 @@ function LoginInner() {
     setLoading(true); setError(null);
     try {
       const res = await AuthService.login({ email, password });
-      // Backend response: { success, data: { user, accessToken } }
-      const user = res.data.user;
-      const token = res.data.accessToken;
+      // Backend response: { success, token, user }
+      // (also includes data: { user, accessToken } for legacy compatibility)
+      const user  = res.user  || res.data?.user;
+      const token = res.token || res.data?.accessToken;
+      if (!token || !user) throw new Error('Invalid server response — missing token or user.');
       login(token, user);
-      const isDefaultCallback = !searchParams.get('callbackUrl') || searchParams.get('callbackUrl') === '/dashboard';
-      
-      if (!user.isApproved && (user.role === 'ADMIN' || user.role === 'CLIENT')) {
+
+      if (!user.isApproved && (user.role === 'CLIENT' || user.role === 'ADMIN')) {
         setError('Your account is awaiting administrator approval.');
         setLoading(false);
         return;
       }
 
-      let finalUrl = callbackUrl;
-      if (isDefaultCallback) {
+      const callbackUrl = searchParams.get('callbackUrl');
+      let finalUrl = callbackUrl && !callbackUrl.includes('/auth/login') ? callbackUrl : '/dashboard';
+
+      if (!callbackUrl || callbackUrl === '/dashboard') {
         if (user.role === 'CLIENT') {
           finalUrl = '/client/dashboard';
         } else if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
           finalUrl = '/admin/dashboard';
         }
       }
-      
-      // Prevent loop if callbackUrl is the login page itself
-      if (finalUrl.includes('/auth/login')) finalUrl = '/dashboard';
 
       window.location.href = finalUrl;
     } catch (e: any) {
       if (!e.response) {
-        setError('Server unreachable. Please ensure the backend is running.');
+        setError(e.message || 'Server unreachable. Please ensure the backend is running.');
       } else {
         setError(e.response?.data?.message ?? 'Invalid email or password.');
       }
       setLoading(false);
     }
   };
+
 
   return (
     <UnifiedAuthLayout mode="login">
