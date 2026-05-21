@@ -45,8 +45,8 @@ export function AddExpenseForm() {
     const fetchData = async () => {
       try {
         const [bizRes, propRes] = await Promise.all([
-          api.get('/api/business'),
-          api.get('/api/property')
+          api.get('/business'),
+          api.get('/property')
         ]);
         setBusinesses(bizRes.data?.data?.businesses || []);
         setProperties(propRes.data?.data?.properties || []);
@@ -60,7 +60,7 @@ export function AddExpenseForm() {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await api.post('/api/expenses', data);
+      await api.post('/expenses', data);
       showToast('Expense saved successfully', 'success');
       closeAction();
     } catch (error: any) {

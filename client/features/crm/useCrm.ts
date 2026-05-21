@@ -5,7 +5,7 @@ export const useContacts = () => {
   return useQuery({
     queryKey: ['crm', 'contacts'],
     queryFn: async () => {
-      const { data } = await api.get('/api/crm/contacts');
+      const { data } = await api.get('/crm/contacts');
       return data.data.contacts;
     },
   });
@@ -15,7 +15,7 @@ export const useDeals = () => {
   return useQuery({
     queryKey: ['crm', 'deals'],
     queryFn: async () => {
-      const { data } = await api.get('/api/crm/deals');
+      const { data } = await api.get('/crm/deals');
       return data.data.deals;
     },
   });
@@ -25,7 +25,7 @@ export const usePipelines = () => {
   return useQuery({
     queryKey: ['crm', 'pipelines'],
     queryFn: async () => {
-      const { data } = await api.get('/api/crm/pipelines');
+      const { data } = await api.get('/crm/pipelines');
       return data.data.pipelines;
     },
   });
@@ -35,7 +35,7 @@ export const useCreateContact = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const { data } = await api.post('/api/crm/contacts', payload);
+      const { data } = await api.post('/crm/contacts', payload);
       return data.data;
     },
     onSuccess: () => {
@@ -48,7 +48,7 @@ export const useCreateDeal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const { data } = await api.post('/api/crm/deals', payload);
+      const { data } = await api.post('/crm/deals', payload);
       return data.data;
     },
     onSuccess: () => {

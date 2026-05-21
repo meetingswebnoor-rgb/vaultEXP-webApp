@@ -42,7 +42,7 @@ export function AddPropertyForm() {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await api.post('/api/property/create', data);
+      await api.post('/property/create', data);
       showToast('Property added successfully', 'success');
       closeAction();
     } catch (error: any) {

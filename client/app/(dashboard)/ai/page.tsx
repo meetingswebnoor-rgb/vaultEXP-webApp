@@ -50,7 +50,7 @@ export default function AiPage() {
     setLoadingContext(true);
     const start = Date.now();
     try {
-      const res = await api.get('/api/ai/context');
+      const res = await api.get('/ai/context');
       setContext(res.data?.data || null);
       setLatency(Date.now() - start);
     } catch (err) {
@@ -87,7 +87,7 @@ export default function AiPage() {
     setIsLoading(true);
 
     try {
-      const res = await api.post('/api/ai/chat', {
+      const res = await api.post('/ai/chat', {
         query: text,
         activeModules: ['all']
       });
@@ -102,7 +102,7 @@ export default function AiPage() {
       }]);
 
       // Soft refresh context in background in case they mutated state
-      api.get('/api/ai/context').then(r => {
+      api.get('/ai/context').then(r => {
         if (r.data?.data) setContext(r.data.data);
       }).catch(() => {});
 

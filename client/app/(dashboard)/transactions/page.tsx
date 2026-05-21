@@ -20,7 +20,7 @@ export default function TransactionsPage() {
   const fetchTransactions = async () => {
     try {
       const query = new URLSearchParams(filters).toString();
-      const res = await api.get(`/api/financial/transactions?${query}`);
+      const res = await api.get(`/financial/transactions?${query}`);
       setTransactions(res.data.data.transactions);
     } catch (err) {
       console.error(err);
@@ -32,7 +32,7 @@ export default function TransactionsPage() {
   const runAIAnalysis = async () => {
     setAnalyzing(true);
     try {
-      const res = await api.get('/api/financial/transactions/ai-insights');
+      const res = await api.get('/financial/transactions/ai-insights');
       setInsights(res.data.data);
     } catch (err) {
       console.error(err);
@@ -43,7 +43,7 @@ export default function TransactionsPage() {
 
   const updateCategory = async (id: string, newCategory: string) => {
     try {
-      await api.patch(`/api/financial/transactions/${id}/category`, { category: newCategory });
+      await api.patch(`/financial/transactions/${id}/category`, { category: newCategory });
       await fetchTransactions(); // Refresh
     } catch (err) {
       console.error(err);

@@ -133,7 +133,7 @@ export function VaultAISidebar() {
 
     try {
       const activeModule = pathname.split('/')[1] || 'all';
-      const res = await api.post('/api/ai/chat', {
+      const res = await api.post('/ai/chat', {
         query: promptText,
         activeModules: [activeModule]
       });

@@ -41,7 +41,7 @@ function GoogleButtonInner({
 
         // Send to our backend using access_token as idToken placeholder
         // Backend will verify via userinfo endpoint
-        const res = await api.post('/api/auth/google', {
+        const res = await api.post('/auth/google', {
           idToken: tokenResponse.access_token,
           googleUser, // send user info as well for direct use
         });

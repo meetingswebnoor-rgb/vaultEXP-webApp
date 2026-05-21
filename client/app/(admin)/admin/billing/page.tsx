@@ -9,7 +9,7 @@ export default function RevenueBillingDashboard() {
   const { data: revenueData, isLoading: isLoadingRevenue } = useQuery({
     queryKey: ['revenueAnalytics'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/billing/revenue');
+      const res = await api.get('/admin/billing/revenue');
       return res.data.data;
     }
   });
@@ -17,7 +17,7 @@ export default function RevenueBillingDashboard() {
   const { data: invoicesData, isLoading: isLoadingInvoices } = useQuery({
     queryKey: ['billingInvoices'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/billing/invoices');
+      const res = await api.get('/admin/billing/invoices');
       return res.data.data;
     }
   });

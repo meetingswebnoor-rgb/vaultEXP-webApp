@@ -22,7 +22,7 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
   const { data: businesses } = useQuery({
     queryKey: ['businesses'],
     queryFn: async () => {
-      const res = await api.get('/api/business');
+      const res = await api.get('/business');
       return res.data.data;
     }
   });
@@ -30,7 +30,7 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
   const { data: properties } = useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
-      const res = await api.get('/api/property');
+      const res = await api.get('/property');
       return res.data.data;
     }
   });
@@ -52,7 +52,7 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
     setIsLoading(true);
 
     try {
-      await api.post('/api/wallet/create', {
+      await api.post('/wallet/create', {
         ...formData,
         balance: Number(formData.balance) || 0
       });

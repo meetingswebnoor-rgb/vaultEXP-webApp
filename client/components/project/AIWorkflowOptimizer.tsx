@@ -10,7 +10,7 @@ export default function AIWorkflowOptimizer({ projectId }: { projectId: string }
   const optimize = async () => {
     setLoading(true);
     try {
-      const res = await api.post(`/api/projects/${projectId}/ai-optimize`);
+      const res = await api.post(`/projects/${projectId}/ai-optimize`);
       setInsights(res.data.data.insights);
     } catch (err) {
       console.error(err);

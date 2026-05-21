@@ -28,7 +28,7 @@ export default function ExpensesPage() {
 
   const fetchExpenses = async () => {
     try {
-      const res = await api.get('/api/financial/expenses');
+      const res = await api.get('/financial/expenses');
       setExpenses(res.data.data.expenses);
     } catch (err) {
       console.error(err);
@@ -44,7 +44,7 @@ export default function ExpensesPage() {
   const runAIAnalysis = async () => {
     setAnalyzing(true);
     try {
-      const res = await api.get('/api/financial/expenses/ai-insights');
+      const res = await api.get('/financial/expenses/ai-insights');
       setInsights(res.data.data);
     } catch (err) {
       console.error(err);
@@ -58,7 +58,7 @@ export default function ExpensesPage() {
     try {
       // Simulate file upload receiptUrl creation for MVP
       const mockReceiptUrl = `https://vault-storage.mock/receipts/doc-${Date.now()}.pdf`;
-      await api.post('/api/financial/expenses', { ...formData, receiptUrl: mockReceiptUrl });
+      await api.post('/financial/expenses', { ...formData, receiptUrl: mockReceiptUrl });
       setShowModal(false);
       await fetchExpenses();
     } catch (err) {
@@ -68,7 +68,7 @@ export default function ExpensesPage() {
 
   const toggleTaxStatus = async (id: string, currentStatus: boolean) => {
     try {
-      await api.patch(`/api/financial/expenses/${id}/tax-status`, { isTaxDeductible: !currentStatus });
+      await api.patch(`/financial/expenses/${id}/tax-status`, { isTaxDeductible: !currentStatus });
       await fetchExpenses();
     } catch (err) {
       console.error(err);

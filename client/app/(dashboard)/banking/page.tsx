@@ -16,7 +16,7 @@ export default function BankingPage() {
 
   const fetchWallets = async () => {
     try {
-      const res = await api.get('/api/wallet');
+      const res = await api.get('/wallet');
       setWallets(res.data.data.wallets);
       if (res.data.data.wallets.length > 0 && !activeWalletId) {
         setActiveWalletId(res.data.data.wallets[0].id);
@@ -36,7 +36,7 @@ export default function BankingPage() {
     setConnecting(true);
     try {
       // Simulate Plaid Link success
-      await api.post('/api/financial/banking/connect', {
+      await api.post('/financial/banking/connect', {
         publicToken: 'public-mock-token'
       });
       await fetchWallets();
@@ -50,7 +50,7 @@ export default function BankingPage() {
   const loadReconciliation = async (walletId: string) => {
     setActiveWalletId(walletId);
     try {
-      const res = await api.get(`/api/financial/banking/${walletId}/reconciliation`);
+      const res = await api.get(`/financial/banking/${walletId}/reconciliation`);
       setReconciliation(res.data.data.report);
     } catch (err) {
       console.error(err);
@@ -60,7 +60,7 @@ export default function BankingPage() {
   const autoReconcile = async () => {
     if (!activeWalletId) return;
     try {
-      await api.post(`/api/financial/banking/${activeWalletId}/reconcile`);
+      await api.post(`/financial/banking/${activeWalletId}/reconcile`);
       await loadReconciliation(activeWalletId);
     } catch (err) {
       console.error(err);

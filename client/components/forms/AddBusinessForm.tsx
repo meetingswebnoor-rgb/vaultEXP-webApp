@@ -40,7 +40,7 @@ export function AddBusinessForm() {
   const onSubmit = async (data: BusinessFormValues) => {
     setIsSubmitting(true);
     try {
-      await api.post('/api/business/create', data);
+      await api.post('/business/create', data);
       showToast('Business added successfully', 'success');
       closeAction();
       // Optional: Refresh data or navigate

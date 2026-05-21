@@ -36,7 +36,7 @@ export function DeductionCenter({ refreshTrigger = 0, onUpdated }: Props) {
   const fetchDeductions = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/tax/deductions');
+      const res = await api.get('/tax/deductions');
       const data = res.data?.data;
       if (data) {
         setClaimed(data.claimedDeductions || []);
@@ -57,7 +57,7 @@ export function DeductionCenter({ refreshTrigger = 0, onUpdated }: Props) {
   const toggleDeduction = async (expenseId: string, currentStatus: boolean, category: string) => {
     setUpdatingId(expenseId);
     try {
-      await api.put(`/api/tax/deductions/${expenseId}`, {
+      await api.put(`/tax/deductions/${expenseId}`, {
         isDeductible: !currentStatus,
         taxCategory: category
       });

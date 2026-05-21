@@ -45,7 +45,7 @@ export function AIActionCenter() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/api/ai/actions');
+      const res = await api.get('/ai/actions');
       setActions(res.data?.data || []);
     } catch {
       setError('Failed to aggregate AI Automation center suggestions.');

@@ -13,7 +13,7 @@ export default function CommunicationsDashboard() {
   const { data: metricsData, isLoading: metricsLoading } = useQuery({
     queryKey: ['commMetrics'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/communications/metrics');
+      const res = await api.get('/admin/communications/metrics');
       return res.data.data;
     }
   });
@@ -21,14 +21,14 @@ export default function CommunicationsDashboard() {
   const { data: templatesData, isLoading: templatesLoading } = useQuery({
     queryKey: ['commTemplates'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/communications/templates');
+      const res = await api.get('/admin/communications/templates');
       return res.data.data;
     }
   });
 
   const sendTest = useMutation({
     mutationFn: async () => {
-      return api.post('/api/admin/communications/test', { provider: testProvider, type: testType });
+      return api.post('/admin/communications/test', { provider: testProvider, type: testType });
     }
   });
 

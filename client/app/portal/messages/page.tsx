@@ -8,7 +8,7 @@ export default function PortalMessages() {
   const [content, setContent] = useState('');
 
   useEffect(() => {
-    api.get('/api/portal/messages')
+    api.get('/portal/messages')
        .then(res => setMessages(res.data.data.messages))
        .catch(() => setMessages([]));
   }, []);

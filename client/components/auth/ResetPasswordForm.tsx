@@ -34,7 +34,7 @@ export function ResetPasswordForm() {
     setStatus('loading');
     
     try {
-      await api.post('/api/auth/reset-password', { token, password });
+      await api.post('/auth/reset-password', { token, password });
       setStatus('success');
     } catch (err: any) {
       setStatus('error');

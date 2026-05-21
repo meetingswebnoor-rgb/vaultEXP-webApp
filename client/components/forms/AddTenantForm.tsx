@@ -50,7 +50,7 @@ export function AddTenantForm({ initialPropertyId }: AddTenantFormProps) {
     if (!initialPropertyId) {
       const fetchProps = async () => {
         try {
-          const res = await api.get('/api/property');
+          const res = await api.get('/property');
           setProperties(res.data?.data?.properties || []);
         } catch (err) {
           console.error('Failed to fetch properties', err);
@@ -65,7 +65,7 @@ export function AddTenantForm({ initialPropertyId }: AddTenantFormProps) {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await api.post(`/api/property/${data.propertyId}/tenants`, data);
+      await api.post(`/property/${data.propertyId}/tenants`, data);
       showToast('Tenant added successfully', 'success');
       closeAction();
     } catch (error: any) {

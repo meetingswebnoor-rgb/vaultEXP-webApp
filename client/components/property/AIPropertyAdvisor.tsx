@@ -41,7 +41,7 @@ export function AIPropertyAdvisor({ propertyId, propertyName }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get(`/api/property/${propertyId}/ai-advice`);
+      const res = await api.get(`/property/${propertyId}/ai-advice`);
       setData(res.data?.data);
     } catch {
       setError('Failed to generate AI Property Insights.');

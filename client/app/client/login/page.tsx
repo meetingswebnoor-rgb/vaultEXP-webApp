@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { AuthService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/authStore';
 import { Briefcase, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -33,8 +33,8 @@ function ClientLoginContent() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
-      const res = await api.post('/api/auth/login', data);
-      return res.data;
+      const res = await AuthService.login(data);
+      return res;
     },
     onSuccess: (data) => {
       const user = data.data.user;

@@ -18,7 +18,7 @@ export function DesktopPropertyLayout({ properties, stats, onAdd }: { properties
   const { data: detail, isLoading } = useQuery({
     queryKey: ['property', activeId],
     queryFn: async () => {
-      const res = await api.get(`/api/property/${activeId}`);
+      const res = await api.get(`/property/${activeId}`);
       return res.data.data;
     },
     enabled: !!activeId,

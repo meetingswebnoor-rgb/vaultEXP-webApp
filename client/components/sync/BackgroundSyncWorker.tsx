@@ -98,15 +98,15 @@ async function executeTask(task: SyncTask) {
   // Demo dispatch mapping for different background operations
   switch (task.type) {
     case 'upload':
-      return api.post('/api/documents/upload', task.payload);
+      return api.post('/documents/upload', task.payload);
     case 'ai_sync':
-      return api.post('/api/ai/sync', task.payload);
+      return api.post('/ai/sync', task.payload);
     case 'automation_sync':
-      return api.post('/api/automations/sync', task.payload);
+      return api.post('/automations/sync', task.payload);
     case 'crm_update':
-      return api.put(`/api/crm/${task.payload.id}`, task.payload);
+      return api.put(`/crm/${task.payload.id}`, task.payload);
     case 'notification_sync':
-      return api.post('/api/notifications/sync', task.payload);
+      return api.post('/notifications/sync', task.payload);
     default:
       console.warn(`[BACKGROUND SYNC] Unknown task type: ${task.type}`);
       return Promise.resolve();

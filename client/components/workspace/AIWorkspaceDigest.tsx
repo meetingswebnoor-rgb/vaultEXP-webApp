@@ -10,7 +10,7 @@ export default function AIWorkspaceDigest({ workspaceId }: { workspaceId: string
   const generate = async () => {
     setLoading(true);
     try {
-      const res = await api.post(`/api/workspaces/${workspaceId}/ai-summary`);
+      const res = await api.post(`/workspaces/${workspaceId}/ai-summary`);
       setSummary(res.data.data.summary);
     } catch (err) {
       console.error(err);

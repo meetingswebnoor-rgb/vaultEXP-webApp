@@ -18,21 +18,21 @@ export type DocumentFormData = Omit<PropertyDocument, '_id' | 'propertyId' | 'up
 
 export const documentApi = {
   list: async (propertyId: string): Promise<PropertyDocument[]> => {
-    const res = await api.get(`/api/property/${propertyId}/documents`);
+    const res = await api.get(`/property/${propertyId}/documents`);
     return res.data.data?.documents ?? [];
   },
 
   create: async (propertyId: string, data: DocumentFormData): Promise<PropertyDocument> => {
-    const res = await api.post(`/api/property/${propertyId}/documents`, data);
+    const res = await api.post(`/property/${propertyId}/documents`, data);
     return res.data.data;
   },
 
   update: async (documentId: string, data: Partial<DocumentFormData>): Promise<PropertyDocument> => {
-    const res = await api.put(`/api/property/document/${documentId}`, data);
+    const res = await api.put(`/property/document/${documentId}`, data);
     return res.data.data;
   },
 
   delete: async (documentId: string): Promise<void> => {
-    await api.delete(`/api/property/document/${documentId}`);
+    await api.delete(`/property/document/${documentId}`);
   },
 };

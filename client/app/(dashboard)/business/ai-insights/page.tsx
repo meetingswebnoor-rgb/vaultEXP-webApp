@@ -19,7 +19,7 @@ export default function BusinessAIInsightsPage() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await api.get('/api/business');
+        const res = await api.get('/business');
         const list = res.data?.data?.businesses || [];
         setBusinesses(list);
         if (list.length > 0) setSelected(list[0]);

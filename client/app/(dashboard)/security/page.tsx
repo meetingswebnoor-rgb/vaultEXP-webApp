@@ -40,7 +40,7 @@ export default function SecurityPage() {
   const runAiAnalysis = async () => {
     setAnalyzing(true);
     try {
-      const res = await api.post('/api/security/analyze');
+      const res = await api.post('/security/analyze');
       setAiAnalysis(res.data.data.analysis);
       fetchLogs();
     } catch (err) {
@@ -52,7 +52,7 @@ export default function SecurityPage() {
 
   const triggerDemo = async () => {
     try {
-      await api.post('/api/security/demo');
+      await api.post('/security/demo');
       fetchLogs();
     } catch (err) {
       console.error(err);

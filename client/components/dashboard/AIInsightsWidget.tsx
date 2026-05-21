@@ -14,7 +14,7 @@ export function AIInsightsWidget() {
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const res = await api.get('/api/ai/insights');
+        const res = await api.get('/ai/insights');
         setData(res.data?.data);
       } catch (error) {
         console.error('Failed to load AI insights', error);

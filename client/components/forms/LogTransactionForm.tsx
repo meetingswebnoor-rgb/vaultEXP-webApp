@@ -43,7 +43,7 @@ export function LogTransactionForm() {
   useEffect(() => {
     const fetchWallets = async () => {
       try {
-        const res = await api.get('/api/wallet');
+        const res = await api.get('/wallet');
         setWallets(res.data?.data || []);
       } catch (err) {
         console.error('Failed to fetch wallets', err);
@@ -55,7 +55,7 @@ export function LogTransactionForm() {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await api.post('/api/wallet/transaction', data);
+      await api.post('/wallet/transaction', data);
       showToast('Transaction logged successfully', 'success');
       closeAction();
     } catch (error: any) {

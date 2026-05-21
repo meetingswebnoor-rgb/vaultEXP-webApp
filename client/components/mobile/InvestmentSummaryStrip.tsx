@@ -20,7 +20,7 @@ export function InvestmentSummaryStrip() {
   const { data, isLoading } = useQuery({
     queryKey: ['investments'],
     queryFn: async () => {
-      const res = await api.get('/api/investment');
+      const res = await api.get('/investment');
       return res.data;
     },
     staleTime: 60_000,

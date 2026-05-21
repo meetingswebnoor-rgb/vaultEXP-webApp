@@ -48,7 +48,7 @@ export default function NotificationSettingsPage() {
 
   const fetchPreferences = async () => {
     try {
-      const res = await api.get('/api/notifications/preferences');
+      const res = await api.get('/notifications/preferences');
       const prefs = res.data.data.preferences;
       
       const merged = defaultTypes.map(type => {
@@ -74,7 +74,7 @@ export default function NotificationSettingsPage() {
         emailEnabled: field === 'emailEnabled' ? !currentValue : currentPref.emailEnabled,
       };
 
-      await api.put('/api/notifications/preferences', payload);
+      await api.put('/notifications/preferences', payload);
       
       setPreferences(prev => prev.map(p => p.type === type ? payload : p));
     } catch (err) {

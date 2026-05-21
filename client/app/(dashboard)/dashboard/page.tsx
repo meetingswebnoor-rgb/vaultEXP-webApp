@@ -114,7 +114,7 @@ export default function DashboardPage() {
   const { data: investmentData } = useQuery({
     queryKey: ['investments'],
     queryFn: async () => {
-      const res = await api.get('/api/investment');
+      const res = await api.get('/investment');
       return res.data;
     },
     enabled: !!token,
@@ -133,7 +133,7 @@ export default function DashboardPage() {
   const { data: dashboardRes, isLoading: dashboardLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      const res = await api.get('/api/dashboard');
+      const res = await api.get('/dashboard');
       return res.data.data;
     },
     enabled: !!token

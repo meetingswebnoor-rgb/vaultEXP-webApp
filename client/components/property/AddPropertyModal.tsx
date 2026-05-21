@@ -57,10 +57,10 @@ export function AddPropertyModal({ isOpen, onClose, property }: AddPropertyModal
       };
 
       if (property) {
-        const res = await api.put(`/api/property/${property._id}`, payload);
+        const res = await api.put(`/property/${property._id}`, payload);
 
       } else {
-        const res = await api.post('/api/property/create', payload);
+        const res = await api.post('/property/create', payload);
 
       }
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
 export interface UploadFile {
@@ -81,13 +82,12 @@ export function useFileUpload({ onUploadSuccess, context }: UseFileUploadProps =
     }
 
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/documents/upload`,
+      const response = await api.post(
+        '/documents/upload',
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
+            'Content-Type': 'multipart/form-data'
           },
           signal: controller.signal,
           onUploadProgress: (progressEvent) => {

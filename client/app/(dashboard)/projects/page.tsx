@@ -10,7 +10,7 @@ export default function ProjectsDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/api/projects')
+    api.get('/projects')
        .then(res => setProjects(res.data.data.projects))
        .catch(console.error)
        .finally(() => setLoading(false));

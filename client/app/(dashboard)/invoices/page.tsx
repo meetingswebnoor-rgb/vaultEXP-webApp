@@ -17,7 +17,7 @@ export default function InvoicesPage() {
 
   const fetchInvoices = async () => {
     try {
-      const res = await api.get('/api/financial/invoices');
+      const res = await api.get('/financial/invoices');
       setInvoices(res.data.data.invoices);
     } catch (err) {
       console.error(err);
@@ -41,7 +41,7 @@ export default function InvoicesPage() {
 
   const markStatus = async (id: string, status: string) => {
     try {
-      await api.patch(`/api/financial/invoices/${id}/status`, { status });
+      await api.patch(`/financial/invoices/${id}/status`, { status });
       fetchInvoices();
     } catch (err) {
       console.error(err);
@@ -50,7 +50,7 @@ export default function InvoicesPage() {
 
   const sendInvoice = async (id: string) => {
     try {
-      await api.post(`/api/financial/invoices/${id}/send`);
+      await api.post(`/financial/invoices/${id}/send`);
       fetchInvoices();
     } catch (err) {
       console.error(err);

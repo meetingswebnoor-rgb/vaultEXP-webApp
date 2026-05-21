@@ -11,7 +11,7 @@ export default function SecurityOperationsCenter() {
   const { data: metricsData, isLoading: metricsLoading } = useQuery({
     queryKey: ['securityMetrics'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/security/metrics');
+      const res = await api.get('/admin/security/metrics');
       return res.data.data;
     },
     refetchInterval: 30000
@@ -20,7 +20,7 @@ export default function SecurityOperationsCenter() {
   const { data: threatsData, isLoading: threatsLoading } = useQuery({
     queryKey: ['securityThreats'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/security/threats');
+      const res = await api.get('/admin/security/threats');
       return res.data.data;
     },
     enabled: activeTab === 'threats',
@@ -30,7 +30,7 @@ export default function SecurityOperationsCenter() {
   const { data: auditData, isLoading: auditLoading } = useQuery({
     queryKey: ['securityAudit'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/security/audit');
+      const res = await api.get('/admin/security/audit');
       return res.data.data;
     },
     enabled: activeTab === 'audit',

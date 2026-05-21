@@ -58,7 +58,7 @@ export default function WalletPage() {
   const { data, isLoading, isError } = useQuery<WalletResponse>({
     queryKey: ['wallets'],
     queryFn: async () => {
-      const res = await api.get('/api/wallet');
+      const res = await api.get('/wallet');
       return res.data;
     },
     retry: 1

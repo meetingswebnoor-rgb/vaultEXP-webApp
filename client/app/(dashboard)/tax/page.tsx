@@ -26,14 +26,14 @@ export default function TaxStrategistPage() {
   useEffect(() => {
     const fetchDeductions = async () => {
       try {
-        const res = await api.get('/api/tax/deductions');
+        const res = await api.get('/tax/deductions');
         setDeductions(res.data.data);
       } catch (err) { console.error(err); }
     };
 
     const fetchQuarterly = async () => {
       try {
-        const res = await api.get('/api/tax/quarterly');
+        const res = await api.get('/tax/quarterly');
         setQuarterly(res.data.data);
       } catch (err) { console.error(err); }
     };
@@ -45,7 +45,7 @@ export default function TaxStrategistPage() {
   const runAIStrategy = async () => {
     setLoadingStrategy(true);
     try {
-      const res = await api.get('/api/tax/advice');
+      const res = await api.get('/tax/advice');
       setStrategy(res.data.data);
       setActiveTab('overview');
     } catch (err) { console.error(err); }
@@ -55,7 +55,7 @@ export default function TaxStrategistPage() {
   const runComplianceAudit = async () => {
     setLoadingAudit(true);
     try {
-      const res = await api.get('/api/tax/compliance');
+      const res = await api.get('/tax/compliance');
       setAudit(res.data.data);
       setActiveTab('compliance');
     } catch (err) { console.error(err); }

@@ -37,7 +37,7 @@ export default function CalendarPage() {
       const start = new Date(year, month, 1).toISOString();
       const end = new Date(year, month + 1, 0).toISOString();
 
-      const res = await api.get(`/api/calendar?start=${start}&end=${end}`);
+      const res = await api.get(`/calendar?start=${start}&end=${end}`);
       setEvents(res.data.data.events);
     } catch (error) {
       console.error(error);
@@ -53,7 +53,7 @@ export default function CalendarPage() {
   const handleOptimize = async () => {
     setOptimizing(true);
     try {
-      const res = await api.post('/api/calendar/optimize');
+      const res = await api.post('/calendar/optimize');
       setAiAdvice(res.data.data.advice);
     } catch (err) {
       console.error(err);

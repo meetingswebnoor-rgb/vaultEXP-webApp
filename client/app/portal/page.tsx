@@ -10,7 +10,7 @@ export default function PortalDashboard() {
   useEffect(() => {
     // Only attempt fetch if user is defined to avoid errors when unauthorized
     if (user) {
-      api.get('/api/portal/dashboard')
+      api.get('/portal/dashboard')
          .then(res => setStats(res.data.data))
          .catch(() => {
            // Provide fallback stats if API is not fully seeded with test data

@@ -30,7 +30,7 @@ export default function InvoiceBuilder() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/api/financial/invoices', {
+      await api.post('/financial/invoices', {
         ...formData,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
         items

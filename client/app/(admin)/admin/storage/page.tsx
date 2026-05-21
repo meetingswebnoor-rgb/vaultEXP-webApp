@@ -9,7 +9,7 @@ export default function StorageDashboard() {
   const { data: metricsData, isLoading: metricsLoading } = useQuery({
     queryKey: ['storageMetrics'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/storage/metrics');
+      const res = await api.get('/admin/storage/metrics');
       return res.data.data;
     }
   });
@@ -17,7 +17,7 @@ export default function StorageDashboard() {
   const { data: providersData, isLoading: providersLoading } = useQuery({
     queryKey: ['storageProviders'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/storage/providers');
+      const res = await api.get('/admin/storage/providers');
       return res.data.data;
     }
   });

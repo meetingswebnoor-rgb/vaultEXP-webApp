@@ -46,7 +46,7 @@ export default function InvestmentPage() {
   const { data, isLoading, isError } = useQuery<InvestmentResponse>({
     queryKey: ['investments'],
     queryFn: async () => {
-      const res = await api.get('/api/investment');
+      const res = await api.get('/investment');
       return res.data;
     },
     retry: 1,

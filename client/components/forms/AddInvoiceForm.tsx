@@ -54,7 +54,7 @@ export function AddInvoiceForm() {
   useEffect(() => {
     const fetchBiz = async () => {
       try {
-        const res = await api.get('/api/business');
+        const res = await api.get('/business');
         setBusinesses(res.data?.data?.businesses || []);
       } catch (err) {
         console.error('Failed to fetch businesses', err);
@@ -75,7 +75,7 @@ export function AddInvoiceForm() {
         subtotal,
         totalAmount: subtotal, // For simplicity, no tax/discount here
       };
-      await api.post('/api/invoices', payload);
+      await api.post('/invoices', payload);
       showToast('Invoice created successfully', 'success');
       closeAction();
     } catch (error: any) {

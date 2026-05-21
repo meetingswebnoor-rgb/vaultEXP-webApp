@@ -9,7 +9,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
+import { AuthService } from '@/services/auth.service';
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import { UnifiedAuthLayout } from './UnifiedAuthLayout';
 import {
@@ -48,9 +48,9 @@ function LoginInner() {
     if (!validate()) return;
     setLoading(true); setError(null);
     try {
-      const res = await api.post('/api/auth/login', { email, password });
-      const user = res.data.data.user;
-      login(res.data.data.accessToken, user);
+      const res = await AuthService.login({ email, password });
+      const user = res.data.user;
+      login(res.data.accessToken, user);
       const isDefaultCallback = !searchParams.get('callbackUrl') || searchParams.get('callbackUrl') === '/dashboard';
       
       if (!user.isApproved && (user.role === 'ADMIN' || user.role === 'CLIENT')) {
@@ -173,8 +173,8 @@ export function AuthSignupForm() {
     if (!validate()) return;
     setLoading(true); setError(null);
     try {
-      const res = await api.post('/api/auth/signup', { name, email, password });
-      const { token, user } = res.data;
+      const res = await AuthService.signup({ name, email, password });
+      const { token, user } = res;
       login(token, user);
       if (user.role === 'CLIENT') {
         window.location.href = '/portal';

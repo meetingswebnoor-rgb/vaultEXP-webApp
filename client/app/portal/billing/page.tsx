@@ -12,7 +12,7 @@ export default function PortalBillingPage() {
   useEffect(() => {
     const fetchSubs = async () => {
       try {
-        const res = await api.get('/api/financial/subscriptions/client');
+        const res = await api.get('/financial/subscriptions/client');
         setSubscriptions(res.data.data.subscriptions);
       } catch (err) {
         console.error(err);

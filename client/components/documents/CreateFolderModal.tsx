@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Folder, Palette, BrainCircuit, CheckCircle2 } from 'lucide-react';
 import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
-import axios from 'axios';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/ui/Toast';
 
@@ -47,10 +47,9 @@ export function CreateFolderModal({ isOpen, onClose, onSuccess, parentId }: Crea
     if (!name.trim()) return;
     setIsLoading(true);
     try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/documents/folders`,
-        { name, color: selectedColor, parentId },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.post(
+        '/documents/folders',
+        { name, color: selectedColor, parentId }
       );
       
       if (res.status === 201) {

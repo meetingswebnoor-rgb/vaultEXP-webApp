@@ -15,7 +15,7 @@ export default function FinancialReportsPage() {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const res = await api.get('/api/financial/accounting/reports');
+        const res = await api.get('/financial/accounting/reports');
         setReports(res.data.data.reports);
       } catch (err) {
         console.error(err);

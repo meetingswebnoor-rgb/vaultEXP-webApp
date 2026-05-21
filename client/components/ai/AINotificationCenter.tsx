@@ -40,7 +40,7 @@ export function AINotificationCenter() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/api/ai/notifications');
+      const res = await api.get('/ai/notifications');
       const data = res.data?.data;
       if (data) {
         setNotifications(data.notifications || []);

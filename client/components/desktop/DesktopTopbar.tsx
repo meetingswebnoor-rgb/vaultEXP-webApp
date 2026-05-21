@@ -97,7 +97,7 @@ export function DesktopTopbar({ sidebarCollapsed }: DesktopTopbarProps) {
   // Fetch live notifications
   const loadNotifs = async () => {
     try {
-      const res = await api.get('/api/ai/notifications');
+      const res = await api.get('/ai/notifications');
       const notifs = res.data?.data?.notifications || [];
       const mapped = notifs.map((n: any, idx: number) => ({
         id: n.id || idx,

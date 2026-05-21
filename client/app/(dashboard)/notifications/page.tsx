@@ -20,7 +20,7 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/notifications');
+      const res = await api.get('/notifications');
       setNotifications(res.data.data.notifications);
     } catch (error) {
       console.error(error);
@@ -42,7 +42,7 @@ export default function NotificationsPage() {
   const markAsRead = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await api.put(`/api/notifications/${id}/read`);
+      await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
     } catch (err) {
       console.error(err);
@@ -51,7 +51,7 @@ export default function NotificationsPage() {
 
   const markAllAsRead = async () => {
     try {
-      await api.put('/api/notifications/read-all');
+      await api.put('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
       console.error(err);
@@ -60,7 +60,7 @@ export default function NotificationsPage() {
 
   const triggerDemo = async () => {
     try {
-      await api.post('/api/notifications/demo');
+      await api.post('/notifications/demo');
     } catch (err) {
       console.error(err);
     }

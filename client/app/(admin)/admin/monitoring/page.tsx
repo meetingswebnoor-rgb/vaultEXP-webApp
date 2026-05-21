@@ -8,7 +8,7 @@ export default function PlatformHealthDashboard() {
   const { data: healthData, isLoading: healthLoading } = useQuery({
     queryKey: ['systemHealth'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/monitoring/health');
+      const res = await api.get('/admin/monitoring/health');
       return res.data.data;
     },
     refetchInterval: 5000 // Poll every 5s for realtime feel
@@ -17,7 +17,7 @@ export default function PlatformHealthDashboard() {
   const { data: servicesData, isLoading: servicesLoading } = useQuery({
     queryKey: ['serviceLatency'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/monitoring/services');
+      const res = await api.get('/admin/monitoring/services');
       return res.data.data;
     },
     refetchInterval: 5000
@@ -26,7 +26,7 @@ export default function PlatformHealthDashboard() {
   const { data: alertsData, isLoading: alertsLoading } = useQuery({
     queryKey: ['systemAlerts'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/monitoring/alerts');
+      const res = await api.get('/admin/monitoring/alerts');
       return res.data.data;
     },
     refetchInterval: 15000

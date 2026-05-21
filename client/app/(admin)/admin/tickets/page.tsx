@@ -12,7 +12,7 @@ export default function AdminHelpdesk() {
   const { data: tickets, isLoading } = useQuery({
     queryKey: ['adminTickets'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/support');
+      const res = await api.get('/admin/support');
       return res.data.data;
     },
     refetchInterval: 15000 // Poll for new tickets every 15s

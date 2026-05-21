@@ -21,7 +21,7 @@ export default function ProjectWorkspaceView({ params }: { params: { id: string 
   }, [params.id]);
 
   const fetchProject = () => {
-    api.get(`/api/projects/${params.id}`)
+    api.get(`/projects/${params.id}`)
        .then(res => setProject(res.data.data.project))
        .catch(console.error);
   };
@@ -32,7 +32,7 @@ export default function ProjectWorkspaceView({ params }: { params: { id: string 
       ...prev,
       tasks: prev.tasks.map((t: any) => t.id === taskId ? { ...t, status: newStatus } : t)
     }));
-    await api.put(`/api/projects/tasks/${taskId}/status`, { status: newStatus });
+    await api.put(`/projects/tasks/${taskId}/status`, { status: newStatus });
   };
 
   if (!project) return <div className="animate-pulse h-96 bg-white/5 rounded-2xl w-full" />;

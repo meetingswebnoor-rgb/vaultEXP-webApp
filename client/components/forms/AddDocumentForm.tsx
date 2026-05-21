@@ -56,7 +56,7 @@ export function AddDocumentForm() {
       formData.append('context', data.context);
       if (data.category) formData.append('category', data.category);
 
-      await api.post('/api/documents/upload', formData, {
+      await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

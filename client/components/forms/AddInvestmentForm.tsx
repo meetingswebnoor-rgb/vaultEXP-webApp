@@ -41,7 +41,7 @@ export function AddInvestmentForm() {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await api.post('/api/investment', data);
+      await api.post('/investment', data);
       showToast('Investment tracked successfully', 'success');
       closeAction();
     } catch (error: any) {

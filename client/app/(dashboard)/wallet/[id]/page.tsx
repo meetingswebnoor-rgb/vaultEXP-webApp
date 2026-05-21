@@ -52,7 +52,7 @@ export default function WalletDetailsPage() {
   const { data: wallet, isLoading, isError } = useQuery({
     queryKey: ['wallet', id],
     queryFn: async () => {
-      const res = await api.get(`/api/wallet/${id}`);
+      const res = await api.get(`/wallet/${id}`);
       return res.data.data;
     }
   });
@@ -62,7 +62,7 @@ export default function WalletDetailsPage() {
     
     setIsDeleting(true);
     try {
-      await api.delete(`/api/wallet/${id}`);
+      await api.delete(`/wallet/${id}`);
       await queryClient.invalidateQueries({ queryKey: ['wallets'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       await queryClient.invalidateQueries({ queryKey: ['wallet-analytics'] });

@@ -14,7 +14,7 @@ export default function AIAdvisorPage() {
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const res = await api.get('/api/financial/advisor/insights');
+        const res = await api.get('/financial/advisor/insights');
         setInsights(res.data.data);
       } catch (err) {
         console.error(err);

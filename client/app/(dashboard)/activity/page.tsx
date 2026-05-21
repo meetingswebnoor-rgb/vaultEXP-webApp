@@ -47,7 +47,7 @@ export default function ActivityCenter() {
       if (filters.module) params.append('module', filters.module);
       if (filters.action) params.append('action', filters.action);
       
-      const res = await api.get(`/api/activity?${params.toString()}`);
+      const res = await api.get(`/activity?${params.toString()}`);
       setActivities(res.data.data.activities);
     } catch (error) {
       console.error(error);

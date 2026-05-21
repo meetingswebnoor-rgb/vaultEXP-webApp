@@ -68,7 +68,7 @@ export default function InvestmentDetailPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['investment', id],
     queryFn: async () => {
-      const res = await api.get(`/api/investment/${id}`);
+      const res = await api.get(`/investment/${id}`);
       return res.data.data;
     },
     enabled: !!id,
@@ -78,7 +78,7 @@ export default function InvestmentDetailPage() {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await api.delete(`/api/investment/${id}`);
+      await api.delete(`/investment/${id}`);
       await queryClient.invalidateQueries({ queryKey: ['investments'] });
       showToast('Investment deleted', 'success');
       router.push('/investment');

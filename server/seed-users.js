@@ -5,17 +5,17 @@ const prisma = require('./src/lib/prisma');
 async function main() {
   console.log('Seeding demo users...');
   
-  // Hash password securely with bcrypt
-  const passwordHash = await bcrypt.hash('Password123!', 12);
+  // We will hash individual passwords below since they are unique per user
   
   const usersToCreate = [
-    { email: 'superadmin@vaultexp.com', name: 'Super Admin', role: 'SUPER_ADMIN', clearanceLevel: 4 },
-    { email: 'admin@vaultexp.com', name: 'Platform Admin', role: 'ADMIN', clearanceLevel: 3 },
-    { email: 'client@vaultexp.com', name: 'Demo Client', role: 'CLIENT', clearanceLevel: 2 },
-    { email: 'demo@vaultexp.com', name: 'Demo User', role: 'USER', clearanceLevel: 1 },
+    { email: 'superadmin@vaultexp.com', name: 'Super Admin', role: 'SUPER_ADMIN', clearanceLevel: 4, password: 'SuperAdmin@123' },
+    { email: 'admin@vaultexp.com', name: 'Platform Admin', role: 'ADMIN', clearanceLevel: 3, password: 'Admin@123' },
+    { email: 'client@vaultexp.com', name: 'Demo Client', role: 'CLIENT', clearanceLevel: 2, password: 'Client@123' },
+    { email: 'user@vaultexp.com', name: 'Demo User', role: 'USER', clearanceLevel: 1, password: 'User@123' },
   ];
 
   for (const u of usersToCreate) {
+    const passwordHash = await bcrypt.hash(u.password, 12);
     const existing = await prisma.user.findUnique({ where: { email: u.email } });
     if (!existing) {
       await prisma.user.create({

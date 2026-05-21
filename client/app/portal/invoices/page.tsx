@@ -17,7 +17,7 @@ export default function PortalInvoicesPage() {
     try {
       // In a real app, this would fetch invoices specifically for the logged in client.
       // For demo, we just fetch the user's invoices.
-      const res = await api.get('/api/financial/invoices');
+      const res = await api.get('/financial/invoices');
       setInvoices(res.data.data.invoices);
     } catch (err) {
       console.error(err);
@@ -37,7 +37,7 @@ export default function PortalInvoicesPage() {
   const handlePaymentSuccess = async (id: string) => {
     // In demo mode, we simulate the webhook by patching manually if we didn't receive the webhook
     try {
-      await api.patch(`/api/financial/invoices/${id}/status`, { status: 'paid' });
+      await api.patch(`/financial/invoices/${id}/status`, { status: 'paid' });
       await fetchInvoices();
     } catch (err) {
       console.error(err);

@@ -12,23 +12,23 @@ export default function AccessControlDashboard() {
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['adminAccessUsers'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/access/users');
+      const res = await api.get('/admin/access/users');
       return res.data.data;
     }
   });
 
   const approveMutation = useMutation({
-    mutationFn: async (id: string) => api.patch(`/api/admin/access/${id}/approve`),
+    mutationFn: async (id: string) => api.patch(`/admin/access/${id}/approve`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminAccessUsers'] })
   });
 
   const roleMutation = useMutation({
-    mutationFn: async ({ id, role, clearanceLevel }: any) => api.patch(`/api/admin/access/${id}/role`, { role, clearanceLevel }),
+    mutationFn: async ({ id, role, clearanceLevel }: any) => api.patch(`/admin/access/${id}/role`, { role, clearanceLevel }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminAccessUsers'] })
   });
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, isActive, status }: any) => api.patch(`/api/admin/access/${id}/status`, { isActive, status }),
+    mutationFn: async ({ id, isActive, status }: any) => api.patch(`/admin/access/${id}/status`, { isActive, status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminAccessUsers'] })
   });
 

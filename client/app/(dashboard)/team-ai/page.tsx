@@ -23,7 +23,7 @@ export default function TeamAIPage() {
 
   const fetchDiagnostics = async () => {
     try {
-      const res = await api.get('/api/ai/team/diagnostics');
+      const res = await api.get('/ai/team/diagnostics');
       setDiagnostics(res.data.data.diagnostics);
     } catch (err) {
       console.error(err);
@@ -35,7 +35,7 @@ export default function TeamAIPage() {
   const handleGenerateReport = async () => {
     setGeneratingReport(true);
     try {
-      const res = await api.post('/api/ai/team/report');
+      const res = await api.post('/ai/team/report');
       setReport(res.data.data.report);
     } catch (err) {
       console.error(err);

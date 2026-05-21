@@ -21,8 +21,8 @@ export default function FinancialAuditPage() {
     setLoading(true);
     try {
       const [logsRes, statsRes] = await Promise.all([
-        api.get('/api/financial/audit/logs'),
-        api.get('/api/financial/audit/stats')
+        api.get('/financial/audit/logs'),
+        api.get('/financial/audit/stats')
       ]);
       setLogs(logsRes.data.data.logs);
       setStats(statsRes.data.data);
@@ -40,7 +40,7 @@ export default function FinancialAuditPage() {
   const runRiskScan = async () => {
     setScanning(true);
     try {
-      const res = await api.get('/api/financial/audit/risk');
+      const res = await api.get('/financial/audit/risk');
       setRiskScan(res.data.data);
     } catch (err) {
       console.error(err);

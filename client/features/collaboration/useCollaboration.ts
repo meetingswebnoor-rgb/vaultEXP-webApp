@@ -5,7 +5,7 @@ export const useComments = (resourceType: string, resourceId: string) => {
   return useQuery({
     queryKey: ['comments', resourceType, resourceId],
     queryFn: async () => {
-      const { data } = await api.get(`/api/collaboration/comments?resourceType=${resourceType}&resourceId=${resourceId}`);
+      const { data } = await api.get(`/collaboration/comments?resourceType=${resourceType}&resourceId=${resourceId}`);
       return data.data.comments;
     },
     enabled: !!resourceId && !!resourceType,
@@ -16,7 +16,7 @@ export const useCreateComment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const { data } = await api.post('/api/collaboration/comments', payload);
+      const { data } = await api.post('/collaboration/comments', payload);
       return data.data;
     },
     onSuccess: (_, variables) => {

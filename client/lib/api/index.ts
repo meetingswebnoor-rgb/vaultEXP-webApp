@@ -4,14 +4,11 @@ import { secureStorage } from '../secureStorage';
 /**
  * API Client for VaultEXP
  *
- * Uses an EMPTY baseURL so all requests are relative to the current page origin.
- * The Next.js proxy in next.config.js forwards /api/* → http://localhost:5000/api/*
- * This completely avoids CORS issues in development.
- *
- * In production, set NEXT_PUBLIC_API_URL and update the proxy/rewrites accordingly.
+ * Uses NEXT_PUBLIC_API_URL to connect to the backend server directly.
+ * Ensure CORS is configured on the backend.
  */
 export const api = axios.create({
-  baseURL: '',  // Relative — goes through Next.js proxy
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -97,13 +94,16 @@ api.interceptors.response.use(
   (error) => {
     // If we get a 401 and we're on the client, clear auth and redirect
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      const isAuthPage = window.location.pathname.startsWith('/auth');
+      const isAuthPage = window.location.pathname.startsWith('/auth') || window.location.pathname.includes('/login');
       
       if (!isAuthPage) {
         console.warn('[API] 401 Unauthorized - clearing session');
         secureStorage.removeItem('vault-auth-storage');
         window.location.href = `/auth/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
       }
+    } else if (!error.response && typeof window !== 'undefined') {
+      // Network errors or server down
+      console.error('[API] Network or Server Error:', error.message);
     }
     return Promise.reject(error);
   }

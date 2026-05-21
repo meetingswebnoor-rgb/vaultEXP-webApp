@@ -18,7 +18,7 @@ export interface PropertyAnalytics {
 
 export const analyticsApi = {
   get: async (propertyId: string): Promise<PropertyAnalytics> => {
-    const res = await api.get(`/api/property/${propertyId}/analytics`);
+    const res = await api.get(`/property/${propertyId}/analytics`);
     return res.data.data;
   }
 };

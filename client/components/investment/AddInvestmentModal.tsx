@@ -35,7 +35,7 @@ export function AddInvestmentModal({ isOpen, onClose }: AddInvestmentModalProps)
     setIsLoading(true);
 
     try {
-      await api.post('/api/investment/create', {
+      await api.post('/investment/create', {
         ...formData,
         amountInvested: Number(formData.amountInvested),
         currentValue: formData.currentValue ? Number(formData.currentValue) : Number(formData.amountInvested),

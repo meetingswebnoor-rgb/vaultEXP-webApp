@@ -26,7 +26,7 @@ export function AITaxStrategist({ onRefreshDeductions }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/api/tax/advice');
+      const res = await api.get('/tax/advice');
       setData(res.data?.data);
       if (onRefreshDeductions) onRefreshDeductions();
     } catch {

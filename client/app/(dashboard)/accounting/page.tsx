@@ -19,7 +19,7 @@ export default function AccountingJournalPage() {
 
   const fetchWallets = async () => {
     try {
-      const res = await api.get('/api/wallet');
+      const res = await api.get('/wallet');
       setWallets(res.data.data.wallets);
     } catch (err) {
       console.error(err);
@@ -41,7 +41,7 @@ export default function AccountingJournalPage() {
     if (!isBalanced) return alert("Journal entry must balance.");
     
     try {
-      await api.post('/api/financial/accounting/journal', {
+      await api.post('/financial/accounting/journal', {
         ...formData,
         date: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString(),
         lines

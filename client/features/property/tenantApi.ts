@@ -32,21 +32,21 @@ export interface TenantFormData {
 
 export const tenantApi = {
   list: async (propertyId: string): Promise<Tenant[]> => {
-    const res = await api.get(`/api/property/${propertyId}/tenants`);
+    const res = await api.get(`/property/${propertyId}/tenants`);
     return res.data.data?.tenants ?? [];
   },
 
   create: async (propertyId: string, data: TenantFormData): Promise<Tenant> => {
-    const res = await api.post(`/api/property/${propertyId}/tenants`, data);
+    const res = await api.post(`/property/${propertyId}/tenants`, data);
     return res.data.data;
   },
 
   update: async (tenantId: string, data: Partial<TenantFormData>): Promise<Tenant> => {
-    const res = await api.put(`/api/property/tenant/${tenantId}`, data);
+    const res = await api.put(`/property/tenant/${tenantId}`, data);
     return res.data.data;
   },
 
   delete: async (tenantId: string): Promise<void> => {
-    await api.delete(`/api/property/tenant/${tenantId}`);
+    await api.delete(`/property/tenant/${tenantId}`);
   },
 };

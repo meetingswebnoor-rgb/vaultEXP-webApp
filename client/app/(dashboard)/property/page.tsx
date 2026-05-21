@@ -38,7 +38,7 @@ export default function PropertyPage() {
   const { data, isLoading, isError } = useQuery<PropertyListResponse>({
     queryKey: ['properties'],
     queryFn: async () => {
-      const res = await api.get('/api/property');
+      const res = await api.get('/property');
       return res.data.data;
     },
     retry: 1,
@@ -47,7 +47,7 @@ export default function PropertyPage() {
   const { data: statsData } = useQuery({
     queryKey: ['property-stats'],
     queryFn: async () => {
-      const res = await api.get('/api/property/stats');
+      const res = await api.get('/property/stats');
       return res.data.data;
     },
     retry: 1,

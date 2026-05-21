@@ -9,7 +9,7 @@ export default function AnalyticsDashboard() {
   const { data: analyticsData, isLoading: isLoadingAnalytics, isError: isErrorAnalytics } = useQuery({
     queryKey: ['platformAnalytics'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/analytics');
+      const res = await api.get('/admin/analytics');
       return res.data.data;
     },
     refetchInterval: 60000 // Refetch every minute
@@ -18,7 +18,7 @@ export default function AnalyticsDashboard() {
   const { data: healthData, isLoading: isLoadingHealth } = useQuery({
     queryKey: ['systemHealth'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/monitoring/health');
+      const res = await api.get('/admin/monitoring/health');
       return res.data.data;
     },
     refetchInterval: 10000 // Fast refetch for system health (10s)

@@ -20,7 +20,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     // Fetch channels
-    api.get('/api/chat/channels').then(res => {
+    api.get('/chat/channels').then(res => {
       setChannels(res.data.data.channels);
       if (res.data.data.channels.length > 0) {
         setActiveChannel(res.data.data.channels[0]);
@@ -57,7 +57,7 @@ export default function ChatPage() {
       socketRef.current.emit('mark-read', activeChannel.channelId);
       
       // Load history
-      api.get(`/api/chat/channels/${activeChannel.channelId}/messages`)
+      api.get(`/chat/channels/${activeChannel.channelId}/messages`)
          .then(res => {
            setMessages(res.data.data.messages);
            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);

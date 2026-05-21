@@ -67,7 +67,7 @@ export function EditInvestmentModal({ isOpen, onClose, investment }: EditInvestm
     setIsLoading(true);
 
     try {
-      await api.put(`/api/investment/${investment._id}`, {
+      await api.put(`/investment/${investment._id}`, {
         ...formData,
         amountInvested: Number(formData.amountInvested),
         currentValue: formData.currentValue ? Number(formData.currentValue) : Number(formData.amountInvested),

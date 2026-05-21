@@ -23,7 +23,7 @@ export function EditWalletModal({ isOpen, onClose, wallet }: EditWalletModalProp
   const { data: businesses } = useQuery({
     queryKey: ['businesses'],
     queryFn: async () => {
-      const res = await api.get('/api/business');
+      const res = await api.get('/business');
       return res.data.data;
     }
   });
@@ -31,7 +31,7 @@ export function EditWalletModal({ isOpen, onClose, wallet }: EditWalletModalProp
   const { data: properties } = useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
-      const res = await api.get('/api/property');
+      const res = await api.get('/property');
       return res.data.data;
     }
   });
@@ -68,7 +68,7 @@ export function EditWalletModal({ isOpen, onClose, wallet }: EditWalletModalProp
     setIsLoading(true);
 
     try {
-      await api.put(`/api/wallet/${wallet._id}`, {
+      await api.put(`/wallet/${wallet._id}`, {
         ...formData,
         balance: Number(formData.balance) || 0
       });

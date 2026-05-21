@@ -11,6 +11,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
+const prisma = require('./lib/prisma');
 
 const app = express();
 
@@ -40,10 +41,22 @@ if (process.env.NODE_ENV !== 'test') {
 // HEALTH CHECK
 // ======================================================
 
-app.get('/health', (_req, res) => {
+app.get('/health', async (_req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    // Simple query to verify Prisma connection
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = 'connected';
+  } catch (err) {
+    console.error('[Health] Database connection failed:', err.message);
+    dbStatus = 'error';
+  }
+
   res.status(200).json({
     success: true,
-    message: 'VaultEXP API is running',
+    status: dbStatus === 'connected' ? 'healthy' : 'degraded',
+    database: dbStatus,
+    uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
   });

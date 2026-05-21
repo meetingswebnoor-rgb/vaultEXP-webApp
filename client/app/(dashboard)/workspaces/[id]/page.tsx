@@ -12,8 +12,8 @@ export default function WorkspaceView({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     Promise.all([
-      api.get(`/api/workspaces/${params.id}`),
-      api.get(`/api/workspaces/${params.id}/analytics`).catch(() => null)
+      api.get(`/workspaces/${params.id}`),
+      api.get(`/workspaces/${params.id}/analytics`).catch(() => null)
     ])
     .then(([wsRes, analyticsRes]) => {
       setWorkspace(wsRes.data.data.workspace);

@@ -19,21 +19,21 @@ export interface PropertyAlert {
 
 export const alertApi = {
   list: async (propertyId: string): Promise<PropertyAlert[]> => {
-    const res = await api.get(`/api/property/${propertyId}/alerts`);
+    const res = await api.get(`/property/${propertyId}/alerts`);
     return res.data.data?.alerts ?? [];
   },
 
   autoGenerate: async (propertyId: string): Promise<{ generatedCount: number }> => {
-    const res = await api.post(`/api/property/${propertyId}/alerts/generate`);
+    const res = await api.post(`/property/${propertyId}/alerts/generate`);
     return res.data.data;
   },
 
   updateStatus: async (alertId: string, status: string): Promise<PropertyAlert> => {
-    const res = await api.put(`/api/property/alert/${alertId}/status`, { status });
+    const res = await api.put(`/property/alert/${alertId}/status`, { status });
     return res.data.data;
   },
 
   delete: async (alertId: string): Promise<void> => {
-    await api.delete(`/api/property/alert/${alertId}`);
+    await api.delete(`/property/alert/${alertId}`);
   },
 };

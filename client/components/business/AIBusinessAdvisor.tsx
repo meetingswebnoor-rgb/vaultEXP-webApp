@@ -37,7 +37,7 @@ export function AIBusinessAdvisor({ businessId, businessName }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get(`/api/business/${businessId}/ai-advice`);
+      const res = await api.get(`/business/${businessId}/ai-advice`);
       setData(res.data?.data);
     } catch {
       setError('Failed to generate AI advice. Please try again.');

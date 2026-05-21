@@ -9,7 +9,7 @@ export default function WorkspacesDirectory() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/api/workspaces')
+    api.get('/workspaces')
        .then(res => setWorkspaces(res.data.data.workspaces))
        .catch(console.error)
        .finally(() => setLoading(false));

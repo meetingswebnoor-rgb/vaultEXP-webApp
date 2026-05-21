@@ -40,7 +40,7 @@ export function AddTransactionModal({ isOpen, onClose, wallets }: AddTransaction
     setIsLoading(true);
 
     try {
-      await api.post(`/api/wallet/${formData.walletId}/transactions`, {
+      await api.post(`/wallet/${formData.walletId}/transactions`, {
         type: formData.type,
         amount: Number(formData.amount),
         category: formData.category,

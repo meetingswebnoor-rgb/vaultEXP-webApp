@@ -17,7 +17,7 @@ export default function SubscriptionsPage() {
 
   const fetchSubscriptions = async () => {
     try {
-      const res = await api.get('/api/financial/subscriptions');
+      const res = await api.get('/financial/subscriptions');
       setSubscriptions(res.data.data.subscriptions);
     } catch (err) {
       console.error(err);
@@ -33,7 +33,7 @@ export default function SubscriptionsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/api/financial/subscriptions', formData);
+      await api.post('/financial/subscriptions', formData);
       setShowModal(false);
       setFormData({ planName: '', amount: 0, interval: 'MONTHLY' });
       await fetchSubscriptions();
@@ -45,7 +45,7 @@ export default function SubscriptionsPage() {
   const handleProcessRenewals = async () => {
     setProcessing(true);
     try {
-      const res = await api.post('/api/financial/subscriptions/process-renewals');
+      const res = await api.post('/financial/subscriptions/process-renewals');
       alert(`Cron triggered manually: ${res.data.message}`);
       await fetchSubscriptions();
     } catch (err) {
@@ -59,7 +59,7 @@ export default function SubscriptionsPage() {
   const handleCancel = async (id: string) => {
     if (!confirm('Are you sure you want to cancel this subscription?')) return;
     try {
-      await api.post(`/api/financial/subscriptions/${id}/cancel`);
+      await api.post(`/financial/subscriptions/${id}/cancel`);
       await fetchSubscriptions();
     } catch (err) {
       console.error(err);

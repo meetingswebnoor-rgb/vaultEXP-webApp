@@ -5,7 +5,7 @@ export function useAdminStats() {
   return useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/dashboard/stats');
+      const res = await api.get('/admin/dashboard/stats');
       return res.data;
     }
   });
@@ -15,7 +15,7 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/users');
+      const res = await api.get('/admin/users');
       return res.data;
     }
   });
@@ -25,7 +25,7 @@ export function useAdminSubscriptions() {
   return useQuery({
     queryKey: ['admin', 'subscriptions'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/subscriptions');
+      const res = await api.get('/admin/subscriptions');
       return res.data;
     }
   });
@@ -35,7 +35,7 @@ export function useAdminTickets() {
   return useQuery({
     queryKey: ['admin', 'tickets'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/support');
+      const res = await api.get('/admin/support');
       return res.data;
     }
   });
@@ -45,7 +45,7 @@ export function useAdminSecurityLogs() {
   return useQuery({
     queryKey: ['admin', 'security'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/security/logs');
+      const res = await api.get('/admin/security/logs');
       return res.data;
     }
   });

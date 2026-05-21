@@ -5,7 +5,12 @@ const { GoogleGenAI } = require('@google/genai');
  */
 class GeminiProvider {
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    if (process.env.GEMINI_API_KEY) {
+      this.ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    } else {
+      this.ai = null;
+      console.warn('[Gemini] GEMINI_API_KEY not found. AI features will be mocked.');
+    }
   }
 
   /**
@@ -15,6 +20,13 @@ class GeminiProvider {
    * @param {string} userQuery 
    */
   async generateResponse(systemPrompt, history, userQuery) {
+    if (!this.ai) {
+      return { 
+        answer: "AI features are currently disabled. Please configure your GEMINI_API_KEY.",
+        action: "none",
+        citations: []
+      };
+    }
     try {
       // Build conversation history format for GenAI
       const contents = history.map(msg => ({

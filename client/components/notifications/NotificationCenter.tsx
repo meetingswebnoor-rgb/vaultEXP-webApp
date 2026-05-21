@@ -32,8 +32,8 @@ export function NotificationCenter() {
   const fetchInitialData = async () => {
     try {
       const [listRes, countRes] = await Promise.all([
-        api.get('/api/notifications'),
-        api.get('/api/notifications/unread-count')
+        api.get('/notifications'),
+        api.get('/notifications/unread-count')
       ]);
       setNotifications(listRes.data.data.notifications.slice(0, 5)); // Just top 5 for popover
       setUnreadCount(countRes.data.data.count);
@@ -59,7 +59,7 @@ export function NotificationCenter() {
   const handleMarkRead = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await api.put(`/api/notifications/${id}/read`);
+      await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {

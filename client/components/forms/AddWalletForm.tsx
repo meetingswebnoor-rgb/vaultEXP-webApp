@@ -41,7 +41,7 @@ export function AddWalletForm() {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await api.post('/api/wallet', data);
+      await api.post('/wallet', data);
       showToast('Wallet created successfully', 'success');
       closeAction();
     } catch (error: any) {

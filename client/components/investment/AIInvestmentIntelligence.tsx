@@ -38,7 +38,7 @@ export function AIInvestmentIntelligence({ onRefreshPortfolio }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/api/investment/ai-intelligence');
+      const res = await api.get('/investment/ai-intelligence');
       setData(res.data?.data);
       if (onRefreshPortfolio) onRefreshPortfolio();
     } catch {

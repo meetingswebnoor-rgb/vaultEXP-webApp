@@ -13,7 +13,7 @@ export default function AIOperationsDashboard() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['aiMetrics'],
     queryFn: async () => {
-      const res = await api.get('/api/admin/ai/metrics');
+      const res = await api.get('/admin/ai/metrics');
       return res.data.data;
     },
     refetchInterval: 30000
@@ -22,7 +22,7 @@ export default function AIOperationsDashboard() {
   const updateConfig = useMutation({
     mutationFn: async (providers: any) => {
       setConfigLoading(true);
-      return api.patch('/api/admin/ai/config', { providers });
+      return api.patch('/admin/ai/config', { providers });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aiMetrics'] });

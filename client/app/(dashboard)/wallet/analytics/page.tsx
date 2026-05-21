@@ -39,7 +39,7 @@ export default function WalletAnalyticsPage() {
   const { data: analytics, isLoading, isError } = useQuery({
     queryKey: ['wallet-analytics'],
     queryFn: async () => {
-      const res = await api.get('/api/wallet/analytics');
+      const res = await api.get('/wallet/analytics');
       return res.data.data;
     }
   });

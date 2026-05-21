@@ -20,22 +20,22 @@ export interface RentRecord {
 
 export const rentApi = {
   list: async (propertyId: string, month: string): Promise<RentRecord[]> => {
-    const res = await api.get(`/api/property/${propertyId}/rent`, { params: { month } });
+    const res = await api.get(`/property/${propertyId}/rent`, { params: { month } });
     return res.data.data || [];
   },
 
   generateBulk: async (propertyId: string, month: string): Promise<RentRecord[]> => {
-    const res = await api.post(`/api/property/${propertyId}/rent/generate`, { month });
+    const res = await api.post(`/property/${propertyId}/rent/generate`, { month });
     return res.data.data || [];
   },
 
   getOrCreate: async (propertyId: string, tenantId: string, month: string): Promise<RentRecord> => {
-    const res = await api.post(`/api/property/${propertyId}/tenant/${tenantId}/rent`, { month });
+    const res = await api.post(`/property/${propertyId}/tenant/${tenantId}/rent`, { month });
     return res.data.data;
   },
 
   update: async (recordId: string, data: Partial<RentRecord>): Promise<RentRecord> => {
-    const res = await api.put(`/api/property/rent/${recordId}`, data);
+    const res = await api.put(`/property/rent/${recordId}`, data);
     return res.data.data;
   },
 };

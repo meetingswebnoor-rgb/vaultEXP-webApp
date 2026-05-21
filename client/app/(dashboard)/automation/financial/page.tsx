@@ -51,8 +51,8 @@ export default function FinancialAutomationPage() {
     const fetchData = async () => {
       try {
         const [wfRes, statsRes] = await Promise.all([
-          api.get('/api/automation/financial/workflows'),
-          api.get('/api/automation/financial/stats')
+          api.get('/automation/financial/workflows'),
+          api.get('/automation/financial/stats')
         ]);
         setWorkflows(wfRes.data.data);
         setStats(statsRes.data.data);
@@ -68,7 +68,7 @@ export default function FinancialAutomationPage() {
   const handleTrigger = async (workflowId: string) => {
     setTriggering(workflowId);
     try {
-      const res = await api.post(`/api/automation/financial/workflows/${workflowId}/trigger`);
+      const res = await api.post(`/automation/financial/workflows/${workflowId}/trigger`);
       setLastLog(res.data.data);
     } catch (err) {
       console.error(err);

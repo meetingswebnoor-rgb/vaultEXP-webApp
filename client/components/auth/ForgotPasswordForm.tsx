@@ -16,7 +16,7 @@ export function ForgotPasswordForm() {
     setStatus('loading');
     
     try {
-      await api.post('/api/auth/forgot-password', { email });
+      await api.post('/auth/forgot-password', { email });
       setStatus('success');
       setMessage('If an account exists, a reset link has been sent.');
     } catch (err: any) {

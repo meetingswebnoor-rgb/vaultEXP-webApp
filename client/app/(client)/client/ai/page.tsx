@@ -35,7 +35,7 @@ export default function ClientAIPage() {
 
     try {
       // Simulate API call to our secure client AI endpoint
-      const res = await api.post('/api/client/ai/chat', { message: query });
+      const res = await api.post('/client/ai/chat', { message: query });
       if (res.data?.success) {
         setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: res.data.data.reply }]);
       } else {

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, User, BrainCircuit, FileText, Loader2 } from 'lucide-react';
 import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
 import { cn } from '@/lib/utils/cn';
-import axios from 'axios';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
 interface DocumentChatModalProps {
@@ -62,10 +62,9 @@ export function DocumentChatModal({ isOpen, onClose, documentIds, documentNames 
     setIsLoading(true);
 
     try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/documents/chat`,
-        { documentIds, query: userMsg.content },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.post(
+        '/documents/chat',
+        { documentIds, query: userMsg.content }
       );
 
       const aiMsg: Message = {

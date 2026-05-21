@@ -18,7 +18,7 @@ export function SecureCheckoutButton({ invoiceId, amount, currency = 'USD', onSu
     setError(null);
     try {
       // 1. Request Secure Payment Intent from VaultEXP Backend
-      const res = await api.post('/api/financial/payments/intent', {
+      const res = await api.post('/financial/payments/intent', {
         invoiceId,
         amount,
         currency,
