@@ -1,4 +1,4 @@
-const prisma = require('../../prisma');
+const prisma = require('../../lib/prisma');
 
 exports.createTicket = async (req, res, next) => {
   try {

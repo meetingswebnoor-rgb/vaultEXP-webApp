@@ -1,0 +1,15 @@
+# railway.toml — VaultEXP Backend
+# Explicit Railway deployment configuration
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npx prisma generate"
+
+[deploy]
+startCommand = "node server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+[healthcheck]
+path = "/health"
+timeout = 30

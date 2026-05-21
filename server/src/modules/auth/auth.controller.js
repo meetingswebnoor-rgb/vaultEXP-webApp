@@ -14,9 +14,7 @@
 'use strict';
 
 const authService = require('./auth.service');
-const { generateTokens, verifyRefreshToken } = require('../../utils/tokenUtils');
-const securityService = require('../security/security.service');
-const logger = require('../../utils/logger');
+const logger      = require('../../utils/logger');
 
 // ── POST /api/auth/signup ───────────────────────────────────────
 exports.signup = async (req, res) => {

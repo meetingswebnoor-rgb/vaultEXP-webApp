@@ -1,35 +1,108 @@
 /**
- * VaultEXP Express App
- * Production Safe Version
+ * VaultEXP Express Application
+ * ============================================================
+ * Production-grade, Railway-ready.
+ *
+ * Changes from previous version:
+ * - CORS: explicit origin allowlist (fixes Vercel credential requests)
+ * - Helmet: cross-origin policies relaxed for API use
+ * - tickets + subscriptions routes re-enabled (import bug fixed)
+ * - /api/tax route added
+ * - Full error handler with AppError support
  */
 
 require('dotenv').config();
 
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const compression = require('compression');
+const express      = require('express');
+const cors         = require('cors');
+const helmet       = require('helmet');
+const morgan       = require('morgan');
+const compression  = require('compression');
 const cookieParser = require('cookie-parser');
-const prisma = require('./lib/prisma');
+const prisma       = require('./lib/prisma');
 
 const app = express();
 
-// ======================================================
-// CORE MIDDLEWARE
-// ======================================================
+// ============================================================
+// CORS — must come BEFORE helmet so preflight is handled first
+// ============================================================
 
-app.use(helmet());
+const ALLOWED_ORIGINS = [
+  // Vercel production deployments
+  'https://vault-exp-web-app-client.vercel.app',
+  'https://vaultexp.vercel.app',
+  'https://vault-web-app.vercel.app',
+  // Any *.vercel.app subdomain (preview deploys, branch deploys)
+  /https:\/\/.*\.vercel\.app$/,
+  // Local development
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+];
+
+// If CORS_ORIGIN is set in env, add each comma-separated value
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(',').forEach((origin) => {
+    const trimmed = origin.trim();
+    if (trimmed && !ALLOWED_ORIGINS.includes(trimmed)) {
+      ALLOWED_ORIGINS.push(trimmed);
+    }
+  });
+}
 
 app.use(
   cors({
-    origin: '*',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Thunder Client, Postman)
+      if (!origin) return callback(null, true);
+
+      const isAllowed = ALLOWED_ORIGINS.some((allowed) =>
+        allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
+      );
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Blocked origin: ${origin}`);
+        // In production, block; in dev, allow all for easier testing
+        if (process.env.NODE_ENV === 'production') {
+          callback(new Error(`Origin ${origin} not allowed by CORS`));
+        } else {
+          callback(null, true);
+        }
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-workspace-id',
+      'x-request-id',
+    ],
+    optionsSuccessStatus: 200, // For IE11 compatibility
   })
 );
 
+// ============================================================
+// SECURITY HEADERS
+// ============================================================
+
+app.use(
+  helmet({
+    // Allow cross-origin requests to this API
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy:   false,
+    contentSecurityPolicy:     false, // Not needed for a pure API
+  })
+);
+
+// ============================================================
+// CORE MIDDLEWARE
+// ============================================================
+
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(compression());
 
@@ -37,143 +110,149 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// ======================================================
-// HEALTH CHECK
-// ======================================================
+// ============================================================
+// HEALTH CHECK  (no auth required)
+// ============================================================
 
 app.get('/health', async (_req, res) => {
   let dbStatus = 'disconnected';
   try {
-    // Simple query to verify Prisma connection
     await prisma.$queryRaw`SELECT 1`;
     dbStatus = 'connected';
   } catch (err) {
-    console.error('[Health] Database connection failed:', err.message);
+    console.error('[Health] DB check failed:', err.message);
     dbStatus = 'error';
   }
 
   res.status(200).json({
-    success: true,
-    status: dbStatus === 'connected' ? 'healthy' : 'degraded',
-    database: dbStatus,
-    uptime: process.uptime(),
+    success:     true,
+    status:      dbStatus === 'connected' ? 'healthy' : 'degraded',
+    database:    dbStatus,
+    uptime:      Math.floor(process.uptime()),
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString(),
+    timestamp:   new Date().toISOString(),
+    version:     process.env.npm_package_version || '1.0.0',
   });
 });
 
-// ======================================================
-// SAFE ROUTE LOADER
-// Prevents Railway crashes from missing modules
-// ======================================================
+// ============================================================
+// SAFE MODULE LOADER
+// Wraps require() so a broken module never crashes the server.
+// Returns a 503 router for that prefix instead.
+// ============================================================
 
-function safeLoad(path) {
+function safeLoad(modulePath) {
   try {
-    return require(path);
-  } catch (e) {
-    console.warn(`[APP] Module not loaded: ${path}`);
-    console.warn(e.message);
+    const mod = require(modulePath);
+    return mod;
+  } catch (err) {
+    console.error(`[APP] ❌ Failed to load module: ${modulePath}`);
+    console.error(`[APP]    ${err.message}`);
 
-    const router = express.Router();
-
-    router.all('*', (_req, res) => {
+    const stub = express.Router();
+    stub.all('*', (_req, res) =>
       res.status(503).json({
         success: false,
-        message: `Module unavailable: ${path}`,
-      });
-    });
-
-    return router;
+        message: `Service temporarily unavailable`,
+        module:  modulePath,
+      })
+    );
+    return stub;
   }
 }
 
-// ======================================================
-// PUBLIC ROUTES
-// ======================================================
+// ============================================================
+// AUTH ROUTES  (public — no token required)
+// ============================================================
 
 app.use('/api/auth', safeLoad('./modules/auth/auth.routes'));
+
+// ============================================================
+// CLIENT PORTAL
+// ============================================================
+
 app.use('/api/client', safeLoad('./modules/client/client.routes'));
-
-// ======================================================
-// CORE MODULES
-// ======================================================
-
-app.use('/api/dashboard', safeLoad('./modules/dashboard/dashboard.routes'));
-app.use('/api/admin', safeLoad('./admin/admin.routes'));
-
-app.use('/api/user', safeLoad('./modules/user/user.routes'));
-
-app.use('/api/business', safeLoad('./modules/business/business.routes'));
-app.use('/api/analytics', safeLoad('./modules/analytics/analytics.routes'));
-
-app.use('/api/wallet', safeLoad('./modules/wallet/wallet.routes'));
-app.use('/api/billing', safeLoad('./modules/billing/billing.routes'));
-
-app.use('/api/calendar', safeLoad('./modules/calendar/calendar.routes'));
-
-app.use('/api/notifications', safeLoad('./modules/notification/notification.routes'));
-
-app.use('/api/security', safeLoad('./modules/security/security.routes'));
-
-app.use('/api/financial', safeLoad('./modules/financial/financial.routes'));
-
-app.use('/api/property', safeLoad('./modules/property/property.routes'));
-
-app.use('/api/investment', safeLoad('./modules/investment/investment.routes'));
-
-app.use('/api/documents', safeLoad('./modules/document/document.routes'));
-
-app.use('/api/workspaces', safeLoad('./modules/workspace/workspace.routes'));
-
-app.use('/api/projects', safeLoad('./modules/project/project.routes'));
-
-app.use('/api/activity', safeLoad('./modules/activity/activity.routes'));
-
-app.use('/api/chat', safeLoad('./modules/chat/chat.routes'));
-
-app.use('/api/crm', safeLoad('./modules/crm/crm.routes'));
-
 app.use('/api/portal', safeLoad('./modules/portal/portal.routes'));
 
+// ============================================================
+// CORE APPLICATION MODULES
+// ============================================================
+
+app.use('/api/dashboard',     safeLoad('./modules/dashboard/dashboard.routes'));
+app.use('/api/admin',         safeLoad('./admin/admin.routes'));
+app.use('/api/user',          safeLoad('./modules/user/user.routes'));
+app.use('/api/business',      safeLoad('./modules/business/business.routes'));
+app.use('/api/analytics',     safeLoad('./modules/analytics/analytics.routes'));
+app.use('/api/wallet',        safeLoad('./modules/wallet/wallet.routes'));
+app.use('/api/billing',       safeLoad('./modules/billing/billing.routes'));
+app.use('/api/calendar',      safeLoad('./modules/calendar/calendar.routes'));
+app.use('/api/notifications', safeLoad('./modules/notification/notification.routes'));
+app.use('/api/security',      safeLoad('./modules/security/security.routes'));
+app.use('/api/financial',     safeLoad('./modules/financial/financial.routes'));
+app.use('/api/property',      safeLoad('./modules/property/property.routes'));
+app.use('/api/investment',    safeLoad('./modules/investment/investment.routes'));
+app.use('/api/documents',     safeLoad('./modules/document/document.routes'));
+app.use('/api/workspaces',    safeLoad('./modules/workspace/workspace.routes'));
+app.use('/api/projects',      safeLoad('./modules/project/project.routes'));
+app.use('/api/activity',      safeLoad('./modules/activity/activity.routes'));
+app.use('/api/chat',          safeLoad('./modules/chat/chat.routes'));
+app.use('/api/crm',           safeLoad('./modules/crm/crm.routes'));
 app.use('/api/collaboration', safeLoad('./modules/collaboration/collaboration.routes'));
+app.use('/api/sync',          safeLoad('./modules/sync/sync.routes'));
+app.use('/api/tax',           safeLoad('./modules/tax/tax.routes'));
 
-app.use('/api/sync', safeLoad('./modules/sync/sync.routes'));
-
-// ======================================================
+// ============================================================
 // AI + AUTOMATION
-// ======================================================
+// ============================================================
 
-app.use('/api/ai', safeLoad('./modules/ai/ai.routes'));
+app.use('/api/ai',         safeLoad('./modules/ai/ai.routes'));
 app.use('/api/automation', safeLoad('./modules/automation/automation.routes'));
 
-// ======================================================
-// TEMPORARILY DISABLED BROKEN MODULES
-// ======================================================
+// ============================================================
+// SUPPORT MODULES (fixed & re-enabled)
+// ============================================================
 
-// app.use('/api/subscriptions', safeLoad('./modules/subscription/subscription.routes'));
-// app.use('/api/tickets', safeLoad('./modules/tickets/tickets.routes'));
+app.use('/api/subscriptions', safeLoad('./modules/subscription/subscription.routes'));
+app.use('/api/tickets',       safeLoad('./modules/tickets/tickets.routes'));
 
-// ======================================================
+// ============================================================
 // 404 HANDLER
-// ======================================================
+// ============================================================
 
 app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'API route not found',
+    path:    req.originalUrl,
+    method:  req.method,
   });
 });
 
-// ======================================================
+// ============================================================
 // GLOBAL ERROR HANDLER
-// ======================================================
+// ============================================================
 
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error(err);
+  // CORS errors
+  if (err.message && err.message.includes('not allowed by CORS')) {
+    return res.status(403).json({ success: false, message: err.message });
+  }
 
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal Server Error',
+  const statusCode = err.statusCode || err.status || 500;
+  const message    = err.message || 'Internal Server Error';
+
+  if (statusCode >= 500) {
+    console.error('[ERROR]', err);
+  } else {
+    console.warn('[WARN]', err.message);
+  }
+
+  res.status(statusCode).json({
+    success:   false,
+    message,
+    errorCode: err.code || undefined,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
 

@@ -14,8 +14,9 @@ module.exports = {
   },
 
   db: {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/vaultexp',
-    name: process.env.MONGODB_DB_NAME || 'vaultexp',
+    // MySQL via Prisma — configured through DATABASE_URL env var
+    url:  process.env.DATABASE_URL,
+    name: 'railway',
   },
 
   jwt: {

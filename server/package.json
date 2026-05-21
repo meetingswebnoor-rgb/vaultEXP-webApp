@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
     "test": "jest --passWithNoTests",
     "lint": "eslint src/ --ext .js",
     "db:generate": "prisma generate",
@@ -15,6 +17,9 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "db:seed": "node prisma/seed.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@google/genai": "^2.3.0",

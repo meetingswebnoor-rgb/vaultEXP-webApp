@@ -20,6 +20,7 @@ const signupSchema = z.object({
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address').toLowerCase(),
+  // Login accepts any non-empty password — the hash comparison handles security
   password: z.string().min(1, 'Password is required'),
 });
 
