@@ -77,7 +77,6 @@ function readStoredToken(): string | null {
     let jsonString: string | null = null;
     try {
       // secureStorage.getItem decrypts the XOR+Base64 blob → plain JSON string
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { secureStorage } = require('@/lib/secureStorage') as {
         secureStorage: { getItem: (k: string) => string | null };
       };
@@ -155,7 +154,6 @@ api.interceptors.response.use(
           console.warn('[API] Session expired — redirecting to login');
           // Clear storage safely
           try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
             const { secureStorage } = require('@/lib/secureStorage');
             secureStorage.removeItem('vault-auth-storage');
           } catch {

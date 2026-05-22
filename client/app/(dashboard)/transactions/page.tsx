@@ -17,7 +17,7 @@ export default function TransactionsPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [filters, setFilters] = useState({ search: '', category: '' });
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = React.useCallback(async () => {
     try {
       const query = new URLSearchParams(filters).toString();
       const res = await api.get(`/financial/transactions?${query}`);
@@ -27,7 +27,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   const runAIAnalysis = async () => {
     setAnalyzing(true);
@@ -52,7 +52,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [filters]); // Refetch on filter change
+  }, [fetchTransactions]); // Refetch on filter change
 
   return (
     <PageContainer>

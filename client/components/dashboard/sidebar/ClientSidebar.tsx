@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LogOut, LayoutDashboard, FileText, UploadCloud, CreditCard, Sparkles, CheckSquare, Repeat, BarChart3, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePathname } from 'next/navigation';
@@ -43,7 +44,7 @@ export function ClientSidebar({ isOpen, onClose, brandConfig }: ClientSidebarPro
         <div className="h-20 flex items-center px-6 border-b border-gray-100">
           <Link href="/client/dashboard" className="flex items-center gap-3">
             {brandConfig?.logoUrl ? (
-              <img src={brandConfig.logoUrl} alt="Brand Logo" className="h-8 object-contain" />
+              <Image unoptimized src={brandConfig.logoUrl} alt="Brand Logo" width={120} height={32} className="h-8 w-auto object-contain" />
             ) : (
               <>
                 <div 

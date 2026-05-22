@@ -72,7 +72,6 @@ export async function logout(): Promise<void> {
     // Clear encrypted storage safely regardless of network result
     if (typeof window !== 'undefined') {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { secureStorage } = require('@/lib/secureStorage');
         secureStorage.removeItem('vault-auth-storage');
       } catch {

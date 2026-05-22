@@ -3,6 +3,10 @@ import './globals.css';
 import { Providers } from '@/components/providers/Providers';
 import { QuickActionModal } from '@/components/ui/QuickActionModal';
 import { AIAssistant } from '@/components/ai/AIAssistant';
+import { Inter, Outfit } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
   title: {
@@ -38,16 +42,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Google Fonts — loaded via <link> to avoid next/font SWC requirement */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-sans bg-vault-dark text-white antialiased" suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} font-sans bg-vault-dark text-white antialiased`} suppressHydrationWarning>
         <Providers>
           {children}
           <QuickActionModal />
