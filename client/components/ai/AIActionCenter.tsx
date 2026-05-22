@@ -46,9 +46,17 @@ export function AIActionCenter() {
     setError('');
     try {
       const res = await api.get('/ai/actions');
-      setActions(res.data?.data || []);
+      const data = res.data?.data;
+      setActions(Array.isArray(data) && data.length > 0 ? data : [
+        { id: 'default_review', type: 'review_dashboard', title: 'Review Your Dashboard', description: 'Check your business performance, expenses, and invoices.', priority: 'medium', ctaLabel: 'Go to Dashboard', route: '/dashboard' },
+        { id: 'default_docs', type: 'upload_docs', title: 'Organize Your Documents', description: 'Upload and categorize your business documents for better AI analysis.', priority: 'low', ctaLabel: 'Open Documents', route: '/documents' }
+      ]);
     } catch {
-      setError('Failed to aggregate AI Automation center suggestions.');
+      // Graceful fallback — never show raw error
+      setActions([
+        { id: 'fallback_1', type: 'review_dashboard', title: 'Review Your VaultEXP Dashboard', description: 'VaultAI is warming up. Check your dashboard while intelligence loads.', priority: 'medium', ctaLabel: 'Go to Dashboard', route: '/dashboard' },
+        { id: 'fallback_2', type: 'upload_docs', title: 'Upload Your Documents', description: 'Keep your Document Vault organized for better AI analysis and tax planning.', priority: 'low', ctaLabel: 'Open Documents', route: '/documents' }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -87,17 +95,7 @@ export function AIActionCenter() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-red-500/10 border border-red-500/20 rounded-[20px] p-5 flex items-center gap-3">
-        <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
-        <p className="text-xs text-red-300">{error}</p>
-        <button onClick={fetchActions} className="ml-auto text-xs text-red-400 hover:text-white flex items-center gap-1">
-          <RefreshCw className="w-3 h-3 animate-spin" /> Retry
-        </button>
-      </div>
-    );
-  }
+  // Error state handled silently — fallback actions are shown instead
 
   return (
     <div className="space-y-6">

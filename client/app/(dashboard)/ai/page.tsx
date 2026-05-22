@@ -3,37 +3,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, Bot, Send, Loader2, Award, ShieldAlert, Percent,
-  ArrowRight, DollarSign, Activity, AlertCircle, RefreshCw,
-  Briefcase, Landmark, Terminal, Brain, ChevronRight, CheckCircle2
+  Sparkles, Bot, Send, Loader2, Award, ShieldAlert,
+  Activity, RefreshCw, Briefcase, Landmark, Terminal,
+  Brain, ChevronRight, CheckCircle2
 } from 'lucide-react';
 import { PageContainer } from '@/components/layouts/PageContainer';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { VaultAIOrb } from '@/components/branding/VaultAIOrb';
-import { api } from '@/lib/api';
 import { cn } from '@/lib/utils/cn';
-
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-};
+import { useAIChat, getLoadingMessage } from '@/hooks/useAI';
+import aiService from '@/lib/ai/aiService';
 
 export default function AiPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: 'Welcome to the VaultAI Intelligence Hub. I have analyzed your unified estate registry. You can ask me to perform audits, draft tax rebalancing reports, evaluate tenant risk scores, or check financial standard deviations.',
-      timestamp: new Date()
-    }
-  ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [context, setContext] = useState<any>(null);
+  const [input, setInput]               = useState('');
+  const [context, setContext]           = useState<any>(null);
   const [loadingContext, setLoadingContext] = useState(true);
-  const [latency, setLatency] = useState<number>(45);
+  const [latency, setLatency]           = useState<number>(45);
+
+  const { messages, isLoading, loadingState, sendMessage } = useAIChat({
+    modules: ['all'],
+    welcomeMessage: 'Welcome to the VaultAI Intelligence Hub. I have analyzed your unified estate registry. You can ask me to perform audits, draft tax rebalancing reports, evaluate tenant risk scores, or check financial standard deviations.'
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -50,8 +40,8 @@ export default function AiPage() {
     setLoadingContext(true);
     const start = Date.now();
     try {
-      const res = await api.get('/ai/context');
-      setContext(res.data?.data || null);
+      const data = await aiService.getContext();
+      setContext(data);
       setLatency(Date.now() - start);
     } catch (err) {
       console.error('Failed to retrieve AI estate context:', err);
@@ -73,49 +63,12 @@ export default function AiPage() {
   }, [messages]);
 
   const handleSend = async (text: string) => {
-    if (!text.trim() || isLoading) return;
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMsg]);
+    const trimmed = text.trim();
+    if (!trimmed || isLoading) return;
     setInput('');
-    setIsLoading(true);
-
-    try {
-      const res = await api.post('/ai/chat', {
-        query: text,
-        activeModules: ['all']
-      });
-
-      const reply = res.data?.data?.reply || 'I processed your query but could not construct a strategic response.';
-      
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: reply,
-        timestamp: new Date()
-      }]);
-
-      // Soft refresh context in background in case they mutated state
-      api.get('/ai/context').then(r => {
-        if (r.data?.data) setContext(r.data.data);
-      }).catch(() => {});
-
-    } catch (err) {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'I encountered an error querying the intelligence engine. Please check your network connection.',
-        timestamp: new Date()
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
+    await sendMessage(trimmed);
+    // Soft refresh context in background
+    aiService.getContext().then(d => { if (d) setContext(d); }).catch(() => {});
   };
 
   const fmtCurrency = (val: number) => {
@@ -218,13 +171,13 @@ export default function AiPage() {
             ))}
 
             {isLoading && (
-              <div className="flex gap-3 max-w-[85%] mr-auto animate-pulse">
+              <div className="flex gap-3 max-w-[85%] mr-auto">
                 <div className="w-8 h-8 rounded-xl bg-vault-green/15 border border-vault-green/25 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-vault-green animate-bounce" />
+                  <Bot className="w-4 h-4 text-vault-green animate-pulse" />
                 </div>
                 <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl rounded-tl-none p-4 flex items-center gap-2.5">
                   <Loader2 className="w-4 h-4 text-vault-green animate-spin" />
-                  <span className="text-[10px] text-zinc-400 font-medium">VaultAI is analyzing standard deviations & estate yields...</span>
+                  <span className="text-[10px] text-zinc-400 font-medium">{getLoadingMessage(loadingState) || 'VaultAI is processing...'}</span>
                 </div>
               </div>
             )}
