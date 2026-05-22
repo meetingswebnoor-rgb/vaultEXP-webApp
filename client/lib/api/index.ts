@@ -26,19 +26,22 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
  *    FIX: Always guard — only set header if token is a non-empty string.
  *
  * 3. CORS "Network Error"
- *    withCredentials: true requires backend to set
- *    Access-Control-Allow-Credentials: true AND a specific origin
- *    (not wildcard). Backend CORS is now correctly configured.
- *    withCredentials is kept because auth uses JWT in Authorization
- *    header (not cookies), so it's harmless but consistent.
+ *    withCredentials: true was wrongly set even though this app uses
+ *    JWT Bearer tokens (not cookies). A credentialed CORS request forces
+ *    the browser to reject any response without a specific (non-wildcard)
+ *    Access-Control-Allow-Origin header — even when the backend is
+ *    otherwise correct. FIX: Set withCredentials: false. The Bearer token
+ *    is injected via the Authorization header by the request interceptor.
  *
  * HOW TO ADD A NEW ALLOWED DOMAIN IN FUTURE:
  *    Add it to allowedOrigins[] in server/src/app.js — no frontend change needed.
  */
 
 // ── Base URL ──────────────────────────────────────────────────────────
+// IMPORTANT: NEXT_PUBLIC_API_URL already ends with /api (e.g. https://...railway.app/api)
+// Do NOT append /api again — that would produce double /api/api/auth/login URLs.
 export const API_BASE_URL: string =
-  (process.env.NEXT_PUBLIC_API_URL || 'https://vaultexp-webapp-production.up.railway.app') + '/api';
+  process.env.NEXT_PUBLIC_API_URL || 'https://vaultexp-webapp-production.up.railway.app/api';
 
 // ── Axios instance ─────────────────────────────────────────────────────
 const api = axios.create({
@@ -48,10 +51,13 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept':       'application/json',
   },
-  // withCredentials sends cookies cross-origin.
-  // We use JWT in Authorization header (not cookies), but this is kept
-  // for future cookie-based refresh tokens and consistency.
-  withCredentials: true,
+  // withCredentials: false — JWT Bearer token auth does NOT use cookies.
+  // Setting withCredentials: true would force the browser to perform a
+  // credentialed CORS request, which requires a non-wildcard
+  // Access-Control-Allow-Origin header even for non-cookie requests.
+  // Since we inject the token via Authorization header (not cookies),
+  // withCredentials must be false to avoid unnecessary CORS failures.
+  withCredentials: false,
 });
 
 // ── Safe token reader ─────────────────────────────────────────────────
