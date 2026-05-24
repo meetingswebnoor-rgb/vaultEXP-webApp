@@ -43,7 +43,7 @@ export function RoleGuard({ children, allowedRoles, minimumClearance, loginUrl }
   
   if (user) {
     if (minimumClearance !== undefined) {
-      isAuthorized = (user.clearanceLevel || 0) >= minimumClearance;
+      isAuthorized = user.role === 'SUPER_ADMIN' || (user.clearanceLevel || 0) >= minimumClearance;
     } else if (allowedRoles) {
       isAuthorized = user.role === 'SUPER_ADMIN' || allowedRoles.includes(user.role);
     } else {
