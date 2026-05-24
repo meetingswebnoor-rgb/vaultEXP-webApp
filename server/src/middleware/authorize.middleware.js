@@ -8,7 +8,7 @@ function authorize(...roles) {
     if (!req.user) {
       return next(new AppError('Authentication required', 401));
     }
-    if (!roles.includes(req.user.role)) {
+    if (req.user.role !== 'SUPER_ADMIN' && !roles.includes(req.user.role)) {
       return next(
         new AppError(
           `Access denied. Requires one of: ${roles.join(', ')}`,

@@ -19,7 +19,8 @@ async function main() {
       role: 'SUPER_ADMIN',
       status: 'active',
       isApproved: true,
-      isVerified: true
+      isVerified: true,
+      clearanceLevel: 10
     }
   });
 
@@ -34,7 +35,8 @@ async function main() {
       role: 'ADMIN',
       status: 'active',
       isApproved: true,
-      isVerified: true
+      isVerified: true,
+      clearanceLevel: 7
     }
   });
 
@@ -49,7 +51,8 @@ async function main() {
       role: 'CLIENT',
       status: 'active',
       isApproved: true,
-      isVerified: true
+      isVerified: true,
+      clearanceLevel: 3
     }
   });
 
@@ -64,7 +67,8 @@ async function main() {
       role: 'USER',
       status: 'active',
       isApproved: true,
-      isVerified: true
+      isVerified: true,
+      clearanceLevel: 1
     }
   });
 

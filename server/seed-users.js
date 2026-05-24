@@ -8,9 +8,9 @@ async function main() {
   // We will hash individual passwords below since they are unique per user
   
   const usersToCreate = [
-    { email: 'superadmin@vaultexp.com', name: 'Super Admin', role: 'SUPER_ADMIN', clearanceLevel: 4, password: 'SuperAdmin@123' },
-    { email: 'admin@vaultexp.com', name: 'Platform Admin', role: 'ADMIN', clearanceLevel: 3, password: 'Admin@123' },
-    { email: 'client@vaultexp.com', name: 'Demo Client', role: 'CLIENT', clearanceLevel: 2, password: 'Client@123' },
+    { email: 'superadmin@vaultexp.com', name: 'Super Admin', role: 'SUPER_ADMIN', clearanceLevel: 10, password: 'SuperAdmin@123' },
+    { email: 'admin@vaultexp.com', name: 'Platform Admin', role: 'ADMIN', clearanceLevel: 7, password: 'Admin@123' },
+    { email: 'client@vaultexp.com', name: 'Demo Client', role: 'CLIENT', clearanceLevel: 3, password: 'Client@123' },
     { email: 'user@vaultexp.com', name: 'Demo User', role: 'USER', clearanceLevel: 1, password: 'User@123' },
   ];
 

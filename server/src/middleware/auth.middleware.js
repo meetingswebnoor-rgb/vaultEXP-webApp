@@ -55,7 +55,7 @@ const protect = (req, res, next) => {
  */
 const restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user || (req.user.role !== 'SUPER_ADMIN' && !roles.includes(req.user.role))) {
       logger.warn(`[AUTH MIDDLEWARE] Access forbidden. User role: ${req.user?.role}, Required: ${roles.join(', ')}`);
       return res.status(403).json({
         success: false,

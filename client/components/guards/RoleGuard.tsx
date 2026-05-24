@@ -45,7 +45,7 @@ export function RoleGuard({ children, allowedRoles, minimumClearance, loginUrl }
     if (minimumClearance !== undefined) {
       isAuthorized = (user.clearanceLevel || 0) >= minimumClearance;
     } else if (allowedRoles) {
-      isAuthorized = allowedRoles.includes(user.role);
+      isAuthorized = user.role === 'SUPER_ADMIN' || allowedRoles.includes(user.role);
     } else {
       isAuthorized = true; // Fallback if no restriction provided
     }
