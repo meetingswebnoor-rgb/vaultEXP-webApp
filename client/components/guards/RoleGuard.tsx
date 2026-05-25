@@ -42,8 +42,17 @@ export function RoleGuard({ children, allowedRoles, minimumClearance, loginUrl }
   let isAuthorized = false;
   
   if (user) {
+    const clearanceMap: Record<string, number> = {
+      SUPER_ADMIN: 10,
+      ADMIN: 7,
+      CLIENT: 3,
+      USER: 1
+    };
+    
+    const actualClearance = Math.max(user.clearanceLevel || 0, clearanceMap[user.role] || 0);
+
     if (minimumClearance !== undefined) {
-      isAuthorized = user.role === 'SUPER_ADMIN' || (user.clearanceLevel || 0) >= minimumClearance;
+      isAuthorized = user.role === 'SUPER_ADMIN' || actualClearance >= minimumClearance;
     } else if (allowedRoles) {
       isAuthorized = user.role === 'SUPER_ADMIN' || allowedRoles.includes(user.role);
     } else {
