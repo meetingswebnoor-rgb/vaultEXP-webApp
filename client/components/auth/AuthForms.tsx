@@ -85,11 +85,10 @@ function LoginInner() {
 
   return (
     <UnifiedAuthLayout mode="login">
-      {/* Heading — CSS centers it on mobile, hidden on desktop */}
-      <div className="auth-heading-desktop">
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: 'Outfit, Inter, sans-serif', margin: '0 0 4px' }}>Welcome back</h1>
-        <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Sign in to your vault</p>
-      </div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="auth-heading-desktop text-center mb-6">
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: 'Outfit, Inter, sans-serif', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Welcome back</h1>
+        <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>Authenticate to access your secure vault</p>
+      </motion.div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <GoogleAuthButton label="Continue with Google" callbackUrl={callbackUrl} />
@@ -192,10 +191,10 @@ export function AuthSignupForm() {
 
   return (
     <UnifiedAuthLayout mode="signup">
-      <div className="auth-heading-desktop" style={{ marginBottom: 20, textAlign: 'center' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: 'Outfit, Inter, sans-serif', margin: '0 0 4px' }}>Create your vault</h1>
-        <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Start your asset management journey</p>
-      </div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="auth-heading-desktop text-center mb-6">
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: 'Outfit, Inter, sans-serif', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Create your vault</h1>
+        <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>Start your enterprise asset management journey</p>
+      </motion.div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <GoogleAuthButton label="Sign up with Google" callbackUrl="/dashboard" />

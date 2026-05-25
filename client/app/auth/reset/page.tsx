@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
 import { UnifiedAuthLayout } from '@/components/auth/UnifiedAuthLayout';
+import { motion } from 'framer-motion';
 
 function ResetPasswordContent() {
   const title = "New Password";
@@ -10,10 +11,10 @@ function ResetPasswordContent() {
 
   return (
     <UnifiedAuthLayout mode="reset">
-      <div className="auth-heading-desktop">
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: 'Outfit, Inter, sans-serif', margin: '0 0 4px' }}>{title}</h1>
-        <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>{subtitle}</p>
-      </div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="auth-heading-desktop text-center mb-6">
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: 'Outfit, Inter, sans-serif', margin: '0 0 8px', letterSpacing: '-0.02em' }}>{title}</h1>
+        <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>{subtitle}</p>
+      </motion.div>
       
       <ResetPasswordForm />
     </UnifiedAuthLayout>
