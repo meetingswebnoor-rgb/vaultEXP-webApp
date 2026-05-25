@@ -30,6 +30,10 @@ module.exports = {
           darker: 'var(--color-darker)',
           card:   'var(--color-card)',
           border: 'var(--color-border)',
+          obsidian: '#050505',
+          navy: '#0A0E17',
+          emerald: '#00E676',
+          cyan: '#00E5FF'
         },
       },
       // ── Fonts ─────────────────────────────────────────────────
@@ -46,6 +50,8 @@ module.exports = {
         'pulse-slow':  'pulse 3s infinite',
         'glow':        'glow 2s ease-in-out infinite alternate',
         'float':       'float 6s ease-in-out infinite',
+        'spin-slow':   'spin 15s linear infinite',
+        'mesh-pan':    'meshPan 15s ease-in-out infinite alternate',
       },
       keyframes: {
         fadeIn:    { from: { opacity: 0 }, to: { opacity: 1 } },
@@ -53,6 +59,7 @@ module.exports = {
         slideDown: { from: { opacity: 0, transform: 'translateY(-10px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
         glow:      { from: { boxShadow: '0 0 5px #00FF88' }, to: { boxShadow: '0 0 20px #00FF88, 0 0 40px #00FF88' } },
         float:     { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+        meshPan:   { '0%': { backgroundPosition: '0% 0%' }, '100%': { backgroundPosition: '100% 100%' } },
       },
       // ── Backgrounds ───────────────────────────────────────────
       backgroundImage: {
@@ -60,6 +67,7 @@ module.exports = {
         'gradient-brand':  'linear-gradient(135deg, #00FF88, #16a34a)',
         'gradient-dark':   'linear-gradient(180deg, #0A0A0F 0%, #05050A 100%)',
         'glass':           'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+        'mesh-gradient':   'radial-gradient(at 40% 20%, hsla(160,100%,74%,0.15) 0px, transparent 50%), radial-gradient(at 80% 0%, hsla(189,100%,56%,0.15) 0px, transparent 50%), radial-gradient(at 0% 50%, hsla(240,100%,70%,0.1) 0px, transparent 50%)'
       },
     },
   },

@@ -27,7 +27,7 @@ export function ClientSidebar({ isOpen, onClose, brandConfig }: ClientSidebarPro
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-gray-900/40 z-40 lg:hidden backdrop-blur-sm"
+            className="fixed inset-0 bg-vault-obsidian/80 z-40 lg:hidden backdrop-blur-md"
             onClick={onClose}
           />
         )}
@@ -35,27 +35,29 @@ export function ClientSidebar({ isOpen, onClose, brandConfig }: ClientSidebarPro
 
       <motion.aside
         className={cn(
-          "fixed top-0 left-0 h-full w-[260px] bg-white border-r border-gray-100 z-50 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)]",
-          "lg:translate-x-0 transition-transform duration-300 ease-in-out",
+          "fixed top-0 left-0 h-full w-[280px] bg-vault-navy/90 border-r border-white/5 z-50 flex flex-col backdrop-blur-2xl shadow-[4px_0_24px_rgba(0,0,0,0.5)]",
+          "lg:translate-x-0 transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="h-20 flex items-center px-6 border-b border-gray-100">
-          <Link href="/client/dashboard" className="flex items-center gap-3">
+        <div className="h-24 flex items-center px-8 border-b border-white/5 relative overflow-hidden group">
+          {/* Subtle glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-vault-emerald/0 via-vault-emerald/5 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+          
+          <Link href="/client/dashboard" className="flex items-center gap-4 relative z-10 w-full">
             {brandConfig?.logoUrl ? (
-              <Image unoptimized src={brandConfig.logoUrl} alt="Brand Logo" width={120} height={32} className="h-8 w-auto object-contain" />
+              <Image unoptimized src={brandConfig.logoUrl} alt="Brand Logo" width={120} height={32} className="h-8 w-auto object-contain drop-shadow-md" />
             ) : (
               <>
                 <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-sm"
-                  style={{ backgroundColor: 'var(--brand-primary)' }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-vault-obsidian font-bold shadow-[0_0_15px_rgba(0,230,118,0.3)] text-xl bg-vault-emerald"
                 >
                   V
                 </div>
                 <div>
-                  <span className="text-lg font-bold text-gray-900 tracking-tight">VaultEXP</span>
-                  <span className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">Client Portal</span>
+                  <span className="text-xl font-display font-extrabold text-white tracking-tight drop-shadow-sm">VaultEXP</span>
+                  <span className="block text-[10px] font-bold text-vault-emerald uppercase tracking-[0.2em] mt-0.5">Client Portal</span>
                 </div>
               </>
             )}
@@ -63,31 +65,32 @@ export function ClientSidebar({ isOpen, onClose, brandConfig }: ClientSidebarPro
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-          <div className="space-y-1.5">
-            <NavItem href="/client/dashboard" icon={LayoutDashboard} label="Home" isActive={pathname === '/client/dashboard'} />
-            <NavItem href="/client/analytics" icon={BarChart3} label="Analytics & Insights" isActive={pathname.startsWith('/client/analytics')} />
-            <NavItem href="/client/messages" icon={MessageSquare} label="Messages & Support" isActive={pathname.startsWith('/client/messages')} />
-            <NavItem href="/client/documents" icon={FileText} label="Shared Documents" isActive={pathname.startsWith('/client/documents')} />
-            <NavItem href="/client/uploads" icon={UploadCloud} label="Secure Uploads" isActive={pathname.startsWith('/client/uploads')} />
-            <NavItem href="/client/invoices" icon={CreditCard} label="Billing & Invoices" isActive={pathname.startsWith('/client/invoices')} />
-            <NavItem href="/client/subscriptions" icon={Repeat} label="Subscriptions" isActive={pathname.startsWith('/client/subscriptions')} />
+        <nav className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar">
+          <div className="space-y-2">
+            <NavItem href="/client/dashboard" icon={LayoutDashboard} label="Command Center" isActive={pathname === '/client/dashboard'} />
+            <NavItem href="/client/analytics" icon={BarChart3} label="Insights & Data" isActive={pathname.startsWith('/client/analytics')} />
+            <NavItem href="/client/messages" icon={MessageSquare} label="Comms & Support" isActive={pathname.startsWith('/client/messages')} />
+            <NavItem href="/client/documents" icon={FileText} label="Intelligence Vault" isActive={pathname.startsWith('/client/documents')} />
+            <NavItem href="/client/uploads" icon={UploadCloud} label="Secure Drops" isActive={pathname.startsWith('/client/uploads')} />
+            <NavItem href="/client/invoices" icon={CreditCard} label="Billing & Finance" isActive={pathname.startsWith('/client/invoices')} />
+            <NavItem href="/client/subscriptions" icon={Repeat} label="Active Services" isActive={pathname.startsWith('/client/subscriptions')} />
             <NavItem href="/client/reports" icon={BarChart3} label="Financial Reports" isActive={pathname.startsWith('/client/reports')} />
-            <NavItem href="/client/approvals" icon={CheckSquare} label="Approvals" isActive={pathname.startsWith('/client/approvals')} />
-            <div className="pt-4 mt-4 border-t border-gray-100">
+            <NavItem href="/client/approvals" icon={CheckSquare} label="Pending Approvals" isActive={pathname.startsWith('/client/approvals')} />
+            <div className="pt-4 mt-4 border-t border-white/5 relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-vault-emerald/30 to-transparent" />
               <NavItem href="/client/ai" icon={Sparkles} label="Vault AI Assistant" isActive={pathname.startsWith('/client/ai')} isHighlight />
             </div>
           </div>
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="p-6 border-t border-white/5 bg-vault-obsidian/30 backdrop-blur-md">
           <button 
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-gray-600 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-bold text-gray-400 rounded-xl hover:bg-white/5 hover:text-white transition-all duration-300 border border-transparent hover:border-white/10 group"
           >
-            <LogOut size={16} />
-            Sign Out
+            <LogOut size={18} className="group-hover:text-red-400 transition-colors" />
+            End Session
           </button>
         </div>
       </motion.aside>
@@ -98,31 +101,45 @@ export function ClientSidebar({ isOpen, onClose, brandConfig }: ClientSidebarPro
 function NavItem({ href, icon: Icon, label, isActive, isHighlight }: { href: string, icon: any, label: string, isActive: boolean, isHighlight?: boolean }) {
   if (isHighlight) {
     return (
-      <Link href={href}>
-        <span className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 shadow-sm",
+      <Link href={href} className="block group">
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={cn(
+          "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 overflow-hidden",
           isActive 
-            ? "bg-blue-600 text-white border border-blue-700" 
-            : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-transparent"
+            ? "text-vault-obsidian bg-vault-emerald shadow-[0_0_20px_rgba(0,230,118,0.3)] border border-[#00FFAA]" 
+            : "text-vault-emerald bg-vault-emerald/10 hover:bg-vault-emerald/20 border border-vault-emerald/20"
         )}>
-          <Icon size={18} className={isActive ? "text-blue-200" : "text-blue-600"} />
-          {label}
-        </span>
+          {!isActive && (
+             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-vault-emerald/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+          )}
+          <Icon size={20} className={cn("relative z-10", isActive ? "text-vault-obsidian" : "text-vault-emerald")} />
+          <span className="relative z-10">{label}</span>
+        </motion.div>
       </Link>
     );
   }
 
   return (
-    <Link href={href}>
-      <span className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200",
+    <Link href={href} className="block group">
+      <motion.div 
+        whileHover={{ x: 4 }}
+        className={cn(
+        "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300",
         isActive 
-          ? "bg-gray-100 text-gray-900" 
-          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent"
+          ? "bg-white/10 text-white border border-white/10 shadow-lg" 
+          : "text-gray-400 hover:bg-white/5 hover:text-gray-100 border border-transparent"
       )}>
-        <Icon size={18} className={isActive ? "text-gray-900" : "text-gray-400"} />
+        {isActive && (
+          <motion.div 
+            layoutId="activeIndicator"
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-vault-emerald rounded-r-full shadow-[0_0_10px_rgba(0,230,118,0.5)]"
+          />
+        )}
+        <Icon size={20} className={cn("transition-colors", isActive ? "text-vault-emerald" : "text-gray-500 group-hover:text-gray-300")} />
         {label}
-      </span>
+      </motion.div>
     </Link>
   );
 }
