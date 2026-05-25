@@ -10,7 +10,7 @@ export function AutoRedirect() {
 
   useEffect(() => {
     if (isHydrated && isAuthenticated && user) {
-      if (user.role === 'SUPER_ADMIN') {
+      if (['SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
         router.replace('/admin/dashboard');
       } else if (user.role === 'CLIENT') {
         router.replace('/client/dashboard');

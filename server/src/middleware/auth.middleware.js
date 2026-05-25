@@ -48,6 +48,13 @@ const protect = (req, res, next) => {
     });
   }
 };
+const CLEARANCE_LEVELS = {
+  SUPER_ADMIN: 10,
+  ADMIN: 7,
+  CLIENT: 3,
+  USER: 1
+};
+
 /**
  * Restrict access to specific roles.
  * Must be used AFTER protect middleware.
@@ -55,8 +62,15 @@ const protect = (req, res, next) => {
  */
 const restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || (req.user.role !== 'SUPER_ADMIN' && !roles.includes(req.user.role))) {
-      logger.warn(`[AUTH MIDDLEWARE] Access forbidden. User role: ${req.user?.role}, Required: ${roles.join(', ')}`);
+    const userRole = req.user?.role;
+    const userLevel = CLEARANCE_LEVELS[userRole] || 0;
+    const requiredLevel = roles.length > 0 ? Math.min(...roles.map(r => CLEARANCE_LEVELS[r] || 99)) : 0;
+    
+    const hasRole = roles.includes(userRole);
+    const hasClearance = userLevel >= requiredLevel;
+
+    if (!req.user || (userRole !== 'SUPER_ADMIN' && !hasRole && !hasClearance)) {
+      logger.warn(`[AUTH MIDDLEWARE] Access forbidden. User role: ${userRole}, Required: ${roles.join(', ')}`);
       return res.status(403).json({
         success: false,
         message: 'Forbidden — You do not have permission to perform this action',

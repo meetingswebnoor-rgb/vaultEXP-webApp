@@ -11,7 +11,7 @@ export const metadata = {
 export default function ClientGroupLayout({ children }: { children: ReactNode }) {
   return (
     <AuthGuard fallbackUrl="/client/login">
-      <RoleGuard minimumClearance={2} loginUrl="/client/login">
+      <RoleGuard minimumClearance={3} loginUrl="/client/login">
         <ClientShell>{children}</ClientShell>
       </RoleGuard>
     </AuthGuard>

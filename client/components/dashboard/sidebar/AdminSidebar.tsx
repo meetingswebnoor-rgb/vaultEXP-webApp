@@ -20,6 +20,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore((s) => ({ user: s.user, logout: s.logout }));
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const isAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(user?.role || '');
 
   return (
     <>
@@ -71,13 +72,17 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             <NavItem href="/admin/clients" icon={UserCircle} label="Client Management" isActive={pathname.startsWith('/admin/clients')} />
             <NavItem href="/admin/workspaces" icon={FolderKanban} label="Workspace Management" isActive={pathname.startsWith('/admin/workspaces')} />
 
-            {isSuperAdmin && (
+            {isAdmin && (
               <>
                 <div className="px-3 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Financials</div>
                 <NavItem href="/admin/billing" icon={CreditCard} label="Billing" isActive={pathname.startsWith('/admin/billing')} />
                 <NavItem href="/admin/subscriptions" icon={Repeat} label="Subscriptions" isActive={pathname.startsWith('/admin/subscriptions')} />
                 <NavItem href="/admin/revenue" icon={DollarSign} label="Revenue" isActive={pathname.startsWith('/admin/revenue')} />
+              </>
+            )}
 
+            {isSuperAdmin && (
+              <>
                 <div className="px-3 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">System</div>
                 <NavItem href="/admin/security" icon={ShieldAlert} label="Security Center" isActive={pathname.startsWith('/admin/security')} />
                 <NavItem href="/admin/ai" icon={Sparkles} label="AI Control Center" isActive={pathname.startsWith('/admin/ai')} />

@@ -11,7 +11,7 @@ export const metadata = {
 export default function AdminGroupLayout({ children }: { children: ReactNode }) {
   return (
     <AuthGuard fallbackUrl="/admin/login">
-      <RoleGuard minimumClearance={3} loginUrl="/admin/login">
+      <RoleGuard minimumClearance={7} loginUrl="/admin/login">
         <AdminShell>{children}</AdminShell>
       </RoleGuard>
     </AuthGuard>
