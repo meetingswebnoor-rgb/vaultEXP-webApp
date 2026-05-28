@@ -11,7 +11,7 @@
 const { Router } = require('express');
 const controller = require('./auth.controller');
 const { protect } = require('../../middleware/auth.middleware');
-const { validate, signupSchema, loginSchema } = require('./auth.validator');
+const { validate, signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('./auth.validator');
 
 const router = Router();
 
@@ -42,5 +42,19 @@ router.post('/logout', controller.logout);
  * @access  Protected
  */
 router.get('/me', protect, controller.me);
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Send password reset email
+ * @access  Public
+ */
+router.post('/forgot-password', validate(forgotPasswordSchema), controller.forgotPassword);
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset password using token
+ * @access  Public
+ */
+router.post('/reset-password', validate(resetPasswordSchema), controller.resetPassword);
 
 module.exports = router;

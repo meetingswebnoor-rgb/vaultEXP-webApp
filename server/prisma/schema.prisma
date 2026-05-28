@@ -261,6 +261,8 @@ model User {
   emailVerifyExpires DateTime? @map("email_verify_expires")
   resetToken         String?   @unique @map("reset_token") @db.VarChar(255)
   resetTokenExpires  DateTime? @map("reset_token_expires")
+  passwordResetToken       String?   @unique @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpires     DateTime? @map("password_reset_expires")
 
   // Security
   loginAttempts Int       @default(0) @map("login_attempts")
@@ -286,6 +288,7 @@ model User {
   documentFolders DocumentFolder[]
   comments        Comment[]
   commentMentions CommentMention[]
+  subscriptions   Subscription[]
 
   // Team Collaboration Relations
   ownedTeams       Team[]            @relation("TeamOwner")
@@ -1646,6 +1649,7 @@ model Subscription {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   plan SaaSPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([businessId])

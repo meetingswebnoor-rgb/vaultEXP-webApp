@@ -12,10 +12,12 @@
 'use strict';
 
 const bcrypt         = require('bcryptjs');
+const crypto         = require('crypto');
 const prisma         = require('../../lib/prisma');
 const { UserService } = require('../user/user.service');
 const { signAccessToken } = require('../../utils/tokenUtils');
 const { AppError } = require('../../utils/appError');
+const { sendPasswordResetEmail } = require('../../utils/mailer');
 
 const BCRYPT_ROUNDS = 12;
 
@@ -159,4 +161,60 @@ async function getMe(userId) {
   return await UserService.getById(userId);
 }
 
-module.exports = { signup, login, getMe };
+// ── Forgot Password ────────────────────────────────────────────
+
+async function forgotPassword(email) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  
+  if (!user || user.status === 'suspended' || user.status === 'inactive') {
+    return; // Silently fail to prevent email enumeration
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  const passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordResetToken,
+      passwordResetExpires,
+    },
+  });
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
+
+  await sendPasswordResetEmail(user.email, resetUrl);
+}
+
+// ── Reset Password ─────────────────────────────────────────────
+
+async function resetPassword(token, newPassword) {
+  const passwordResetToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await prisma.user.findFirst({
+    where: {
+      passwordResetToken,
+      passwordResetExpires: { gt: new Date() },
+    },
+  });
+
+  if (!user) {
+    throw new AppError('Invalid or expired reset token.', 400, 'INVALID_TOKEN');
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    },
+  });
+}
+
+module.exports = { signup, login, getMe, forgotPassword, resetPassword };

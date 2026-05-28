@@ -127,3 +127,43 @@ exports.me = async (req, res) => {
     });
   }
 };
+
+// ── POST /api/auth/forgot-password ──────────────────────────────────────
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    await authService.forgotPassword(email);
+    // Always return success even if user doesn't exist (prevent email enumeration)
+    return res.status(200).json({
+      success: true,
+      message: 'If an account exists, a reset link has been sent.',
+    });
+  } catch (err) {
+    logger.error('[AUTH] Forgot password error:', err.message);
+    // Return standard success to not leak
+    return res.status(200).json({
+      success: true,
+      message: 'If an account exists, a reset link has been sent.',
+    });
+  }
+};
+
+// ── POST /api/auth/reset-password ───────────────────────────────────────
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    await authService.resetPassword(token, password);
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successful.',
+    });
+  } catch (err) {
+    logger.error('[AUTH] Reset password error:', err.message);
+    const status = err.statusCode || 400;
+    return res.status(status).json({
+      success: false,
+      message: err.message || 'Invalid or expired reset token.',
+      errorCode: err.code || 'RESET_ERROR',
+    });
+  }
+};
